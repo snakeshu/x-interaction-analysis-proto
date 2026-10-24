@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>X 互动分析 · 原型 v1</title>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --bg-elev: #141416;
+      --bg-card: #1a1a1e;
+      --bg-hover: #222228;
+      --border: #2a2a30;
+      --text: #f0f0f2;
+      --text-muted: #8b8b96;
+      --text-dim: #5c5c66;
+      
+      --progress: #00ba7c;
+      --progress-track: #1e2a24;
+      --tag-super: #f97316;
+      --tag-super-bg: rgba(249, 115, 22, 0.15);
+      --tag-fan: #3b82f6;
+      --tag-fan-bg: rgba(59, 130, 246, 0.15);
+      --tag-passer: #6b7280;
+      --tag-passer-bg: rgba(107, 114, 128, 0.15);
+      --ok: #00ba7c;
+      --ok-bg: rgba(0, 186, 124, 0.12);
+      --bad: #f4212e;
+      --bad-bg: rgba(244, 33, 46, 0.12);
+      --accent: #1d9bf0;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .banner {
+      background: #1c1917;
+      border-bottom: 1px solid #292524;
+      color: #a8a29e;
+      font-size: 12px;
+      padding: 8px 20px;
+      text-align: center;
+    }
+    .banner strong { color: #fbbf24; font-weight: 600; }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 650;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+    .brand-mark {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00ba7c, #1d9bf0);
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    nav.tabs button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    nav.tabs button:hover { color: var(--text); background: var(--bg-hover); }
+    nav.tabs button.active {
+      background: var(--bg-card);
+      color: var(--text);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+
+    main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .stat-card .label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head h2 {
+      font-size: 15px;
+      font-weight: 650;
+    }
+    .panel-head .meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: none;
+      letter-spacing: 0.02em;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .12s; }
+    tbody tr:hover { background: var(--bg-hover); }
+
+    /* User cell */
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 160px;
+    }
+    .user-cell.clickable { cursor: pointer; }
+    .user-cell.clickable:hover .name { color: var(--accent); }
+
+    .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* Avatar + tag stacked (page 谁回复了我) */
+    .user-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .user-stack .avatar { width: 40px; height: 40px; }
+    .user-row-reply {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .user-meta { min-width: 0; }
+    .name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .handle {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .tag.super { color: var(--tag-super); background: var(--tag-super-bg); }
+    .tag.fan { color: var(--tag-fan); background: var(--tag-fan-bg); }
+    .tag.passer { color: var(--tag-passer); background: var(--tag-passer-bg); }
+
+    .preview {
+      color: var(--text-muted);
+      font-size: 13px;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .time {
+      color: var(--text-dim);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .num {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .progress-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 140px;
+    }
+    .bar {
+      flex: 1;
+      height: 6px;
+      background: var(--progress-track);
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+    .bar > i {
+      display: block;
+      height: 100%;
+      background: var(--progress);
+      border-radius: 999px;
+      width: 0%;
+    }
+    .pct {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status.ok { color: var(--ok); background: var(--ok-bg); }
+    .status.bad { color: var(--bad); background: var(--bad-bg); }
+
+    .footnote {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: var(--bg-elev);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .footnote code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #a3e635;
+      background: #12180f;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: min(420px, 100%);
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-head .avatar { width: 48px; height: 48px; font-size: 16px; }
+    .modal h3 { font-size: 16px; font-weight: 650; }
+    .modal .close {
+      margin-left: auto;
+      appearance: none;
+      border: none;
+      background: var(--bg-hover);
+      color: var(--text-muted);
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .modal .close:hover { color: var(--text); }
+    .score-rows { display: flex; flex-direction: column; gap: 8px; }
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg-elev);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .score-row .k { color: var(--text-muted); }
+    .score-row .v { font-weight: 650; font-variant-numeric: tabular-nums; }
+    .score-total {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <strong>示例数据 · 原型 v1</strong> — 非真实拉取，仅用于演示计分、标签与五个视图的交互。
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">X</div>
+      <span>互动分析</span>
+    </div>
+    <nav class="tabs" id="nav" aria-label="视图切换">
+      <button type="button" data-view="overview" class="active">总览</button>
+      <button type="button" data-view="replied-me">谁回复了我</button>
+      <button type="button" data-view="i-replied">我回复了谁</button>
+      <button type="button" data-view="no-reply">没回我的</button>
+      <button type="button" data-view="visit">串门回访</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 总览 -->
+    <section class="view active" id="view-overview">
+      <div class="stats" id="stats"></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>互动最多</h2>
+          <span class="meta" id="overview-meta"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>标签</th>
+                <th>互动次数</th>
+                <th>占比</th>
+              </tr>
+            </thead>
+            <tbody id="overview-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="footnote" id="footnote"></div>
+    </section>
+
+    <!-- 谁回复了我 -->
+    <section class="view" id="view-replied-me">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>谁回复了我</h2>
+          <span class="meta">按互动次数降序 · 进度条 = 总览比例</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>回复预览</th>
+                <th>时间</th>
+                <th>占比</th>
+              </tr>
+            </thead>
+            <tbody id="replied-me-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 我回复了谁 -->
+    <section class="view" id="view-i-replied">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>我回复了谁</h2>
+          <span class="meta">按我回复次数降序 · 无进度条</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>内容预览</th>
+                <th>状态</th>
+                <th>我回复次数</th>
+              </tr>
+            </thead>
+            <tbody id="i-replied-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 没回我的 -->
+    <section class="view" id="view-no-reply">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>我回复了但没回我的</h2>
+          <span class="meta">我有回复 · 对方零回复 · 按时长降序</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>内容预览</th>
+                <th>我回复次数</th>
+                <th>等待时长</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody id="no-reply-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 串门回访 -->
+    <section class="view" id="view-visit">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>串门回访</h2>
+          <span class="meta">我回复过对方 = 串门 · 按串门次数降序</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>我串门内容预览</th>
+                <th>我串门次数</th>
+                <th>回访次数</th>
+                <th>回访状态</th>
+              </tr>
+            </thead>
+            <tbody id="visit-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="avatar" id="m-avatar"></div>
+        <div>
+          <h3 id="m-name"></h3>
+          <div class="handle" id="m-handle"></div>
+          <div style="margin-top:6px" id="m-tag"></div>
+        </div>
+        <button type="button" class="close" id="m-close" aria-label="关闭">×</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">计分追溯（对方回我×2 + 我回对方×1 + 双向额外+1）</p>
+      <div class="score-rows" id="m-rows"></div>
+      <div class="score-total">
+        <span>互动次数</span>
+        <span id="m-total"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== 示例原始数据 ==========
+    // theyReplies: 对方回复我的次数
+    // iReplies: 我回复对方的次数
+    // waitHours: 我最近一次回复后对方未回的等待小时数（仅对方零回复时有意义）
+    const RAW = [
+      {
+        id: "u1", name: "林晓舟", handle: "linxz", color: "#e11d48",
+        theyReplies: 9, iReplies: 5,
+        theirPreview: "这个观点很有意思，展开聊聊？",
+        myPreview: "感谢反馈，下一篇会写更细。",
+        lastTheirAt: "2026-10-23 21:14",
+        waitHours: 0
+      },
+      {
+        id: "u2", name: "阿可", handle: "ake_dev", color: "#8b5cf6",
+        theyReplies: 4, iReplies: 3,
+        theirPreview: "同款踩坑，已收藏。",
+        myPreview: "你那边的部署脚本能开源一份吗？",
+        lastTheirAt: "2026-10-22 11:02",
+        waitHours: 0
+      },
+      {
+        id: "u3", name: "北辰", handle: "beichen_ai", color: "#06b6d4",
+        theyReplies: 2, iReplies: 6,
+        theirPreview: "同意，评测口径要统一。",
+        myPreview: "你们 benchmark 用的是哪套集？",
+        lastTheirAt: "2026-10-20 09:30",
+        waitHours: 0
+      },
+      {
+        id: "u4", name: "小满", handle: "xiaoman", color: "#f59e0b",
+        theyReplies: 0, iReplies: 4,
+        theirPreview: "",
+        myPreview: "新封面好好看，求工具栈～",
+        lastTheirAt: "",
+        waitHours: 120
+      },
+      {
+        id: "u5", name: "青禾", handle: "qinghe", color: "#10b981",
+        theyReplies: 3, iReplies: 1,
+        theirPreview: "早啊，今天也冲。",
+        myPreview: "早安！",
+        lastTheirAt: "2026-10-24 07:55",
+        waitHours: 0
+      },
+      {
+        id: "u6", name: "周予", handle: "zhouyu_pm", color: "#3b82f6",
+        theyReplies: 1, iReplies: 2,
+        theirPreview: "需求文档链接发我一下。",
+        myPreview: "原型已经放进仓库了。",
+        lastTheirAt: "2026-10-19 16:40",
+        waitHours: 0
+      },
+      {
+        id: "u7", name: "匿名观察者", handle: "observer99", color: "#64748b",
+        theyReplies: 1, iReplies: 0,
+        theirPreview: "路过点个赞。",
+        myPreview: "",
+        lastTheirAt: "2026-10-18 13:20",
+        waitHours: 0
+      },
+      {
+        id: "u8", name: "南风", handle: "nanfeng", color: "#ec4899",
+        theyReplies: 0, iReplies: 3,
+        theirPreview: "",
+        myPreview: "这篇写太好了，转发给团队了。",
+        lastTheirAt: "",
+        waitHours: 72
+      },
+      {
+        id: "u9", name: "沐白", handle: "mubai_ux", color: "#a855f7",
+        theyReplies: 5, iReplies: 4,
+        theirPreview: "交互稿第二版看过了，赞。",
+        myPreview: "那一屏密度要不要再降一点？",
+        lastTheirAt: "2026-10-23 18:05",
+        waitHours: 0
+      },
+      {
+        id: "u10", name: "老K", handle: "oldk", color: "#84cc16",
+        theyReplies: 0, iReplies: 2,
+        theirPreview: "",
+        myPreview: "求推荐一本产品方法论。",
+        lastTheirAt: "",
+        waitHours: 240
+      },
+      {
+        id: "u11", name: "四月", handle: "siyue", color: "#f43f5e",
+        theyReplies: 2, iReplies: 0,
+        theirPreview: "哈哈哈笑死。",
+        myPreview: "",
+        lastTheirAt: "2026-10-21 22:11",
+        waitHours: 0
+      },
+      {
+        id: "u12", name: "言蹊", handle: "yanxi", color: "#14b8a6",
+        theyReplies: 0, iReplies: 1,
+        theirPreview: "",
+        myPreview: "欢迎来串门～",
+        lastTheirAt: "",
+        waitHours: 36
+      }
+    ];
+
+    // ========== 计算层 ==========
+    function computeScore(u) {
+      const fromThem = u.theyReplies * 2;
+      const fromMe = u.iReplies * 1;
+      const mutual = (u.theyReplies > 0 && u.iReplies > 0) ? 1 : 0;
+      return {
+        fromThem, fromMe, mutual,
+        score: fromThem + fromMe + mutual
+      };
+    }
+
+    function formatWait(hours) {
+      if (hours >= 48) {
+        const d = Math.floor(hours / 24);
+        const h = hours % 24;
+        return h ? `${d} 天 ${h} 小时` : `${d} 天`;
+      }
+      if (hours >= 24) return `1 天 ${hours - 24} 小时`;
+      return `${hours} 小时`;
+    }
+
+    function initials(name) {
+      return name.slice(0, 1);
+    }
+
+    const scored = RAW.map(u => {
+      const s = computeScore(u);
+      return { ...u, ...s };
+    });
+
+    const totalScore = scored.reduce((a, u) => a + u.score, 0);
+    const avgScore = totalScore / scored.length;
+
+    function tagFor(score) {
+      if (score >= avgScore * 3 && score >= 5) return { key: "super", label: "铁粉" };
+      if (score >= avgScore && score >= 2) return { key: "fan", label: "粉丝" };
+      return { key: "passer", label: "路人" };
+    }
+
+    const users = scored.map(u => {
+      const ratio = totalScore ? (u.score / totalScore) * 100 : 0;
+      return {
+        ...u,
+        ratio,
+        tag: tagFor(u.score),
+        bidirectional: u.theyReplies > 0 && u.iReplies > 0
+      };
+    });
+
+    // 验证比例之和
+    const ratioSum = users.reduce((a, u) => a + u.ratio, 0);
+
+    // 总览三卡片
+    const countRepliedMe = users.filter(u => u.theyReplies > 0).length;
+    const countIReplied = users.filter(u => u.iReplies > 0).length;
+    const countNoReply = users.filter(u => u.iReplies > 0 && u.theyReplies === 0).length;
+
+    // ========== 渲染工具 ==========
+    function tagHtml(tag) {
+      return `<span class="tag ${tag.key}">${tag.label}</span>`;
+    }
+
+    function avatarHtml(u, sizeClass = "") {
+      return `<div class="avatar ${sizeClass}" style="background:${u.color}">${initials(u.name)}</div>`;
+    }
+
+    function userCell(u, withTagInline = true) {
+      return `
+        <div class="user-cell clickable" data-id="${u.id}" title="查看计分追溯">
+          ${avatarHtml(u)}
+          <div>
+            <div class="name">${u.name}</div>
+            <div class="handle">@${u.handle}</div>
+            ${withTagInline ? `<div style="margin-top:4px">${tagHtml(u.tag)}</div>` : ""}
+          </div>
+        </div>`;
+    }
+
+    function progressHtml(ratio) {
+      const r = Math.round(ratio * 10) / 10;
+      return `
+        <div class="progress-cell">
+          <div class="bar"><i style="width:${ratio}%"></i></div>
+          <span class="pct">${r.toFixed(1)}%</span>
+        </div>`;
+    }
+
+    // ========== 各页渲染 ==========
+    function renderOverview() {
+      document.getElementById("stats").innerHTML = `
+        <div class="stat-card">
+          <div class="label">回复我的</div>
+          <div class="value">${countRepliedMe}</div>
+          <div class="hint">对方回复次数 &gt; 0 的用户数</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">我回复的</div>
+          <div class="value">${countIReplied}</div>
+          <div class="hint">我回复次数 &gt; 0 的用户数</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">没回我的</div>
+          <div class="value">${countNoReply}</div>
+          <div class="hint">我有回复 · 对方零回复</div>
+        </div>`;
+
+      const sorted = [...users].sort((a, b) => b.score - a.score);
+      document.getElementById("overview-meta").textContent =
+        `${sorted.length} 人 · 总互动分 ${totalScore} · 均分 ${avgScore.toFixed(2)}`;
+
+      document.getElementById("overview-body").innerHTML = sorted.map(u => `
+        <tr>
+          <td>${userCell(u, false)}</td>
+          <td>${tagHtml(u.tag)}</td>
+          <td class="num">${u.score}</td>
+          <td>${progressHtml(u.ratio)}</td>
+        </tr>`).join("");
+
+      document.getElementById("footnote").innerHTML = `
+        计分：对方回我×2 + 我回对方×1 + 双向额外+1。
+        标签：铁粉（≥均分×3 且 ≥5）· 粉丝（≥均分 且 ≥2）· 路人（其他）。当前均分 <code>${avgScore.toFixed(2)}</code>。
+        比例之和 <code>${ratioSum.toFixed(2)}%</code>（应为 100%）。
+        点击用户名可查看计分追溯。`;
+    }
+
+    function renderRepliedMe() {
+      const list = users
+        .filter(u => u.theyReplies > 0)
+        .sort((a, b) => b.score - a.score);
+
+      const body = document.getElementById("replied-me-body");
+      if (!list.length) {
+        body.innerHTML = `<tr><td colspan="4" class="empty">暂无数据</td></tr>`;
+        return;
+      }
+      body.innerHTML = list.map(u => `
+        <tr>
+          <td>
+            <div class="user-row-reply clickable" data-id="${u.id}" style="cursor:pointer">
+              <div class="user-stack">
+                ${avatarHtml(u)}
+                ${tagHtml(u.tag)}
+              </div>
+              <div class="user-meta">
+                <div class="name">${u.name}</div>
+                <div class="handle">@${u.handle}</div>
+              </div>
+            </div>
+          </td>
+          <td><div class="preview" title="${u.theirPreview}">${u.theirPreview || "—"}</div></td>
+          <td class="time">${u.lastTheirAt || "—"}</td>
+          <td>${progressHtml(u.ratio)}</td>
+        </tr>`).join("");
+    }
+
+    function renderIReplied() {
+      const list = users
+        .filter(u => u.iReplies > 0)
+        .sort((a, b) => b.iReplies - a.iReplies);
+
+      document.getElementById("i-replied-body").innerHTML = list.map(u => {
+        const replied = u.theyReplies > 0;
+        return `
+        <tr>
+          <td>${userCell(u, true)}</td>
+          <td><div class="preview" title="${u.myPreview}">${u.myPreview || "—"}</div></td>
+          <td><span class="status ${replied ? "ok" : "bad"}">${replied ? "已回复" : "未回复"}</span></td>
+          <td class="num">${u.iReplies}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderNoReply() {
+      const list = users
+        .filter(u => u.iReplies > 0 && u.theyReplies === 0)
+        .sort((a, b) => b.waitHours - a.waitHours);
+
+      document.getElementById("no-reply-body").innerHTML = list.map(u => `
+        <tr>
+          <td>${userCell(u, true)}</td>
+          <td><div class="preview" title="${u.myPreview}">${u.myPreview || "—"}</div></td>
+          <td class="num">${u.iReplies}</td>
+          <td class="time">${formatWait(u.waitHours)}</td>
+          <td><span class="status bad">未回复</span></td>
+        </tr>`).join("");
+    }
+
+    function renderVisit() {
+      const list = users
+        .filter(u => u.iReplies > 0)
+        .sort((a, b) => b.iReplies - a.iReplies);
+
+      document.getElementById("visit-body").innerHTML = list.map(u => {
+        const visitedBack = u.theyReplies > 0;
+        const visitCount = visitedBack ? u.theyReplies : 0;
+        return `
+        <tr>
+          <td>${userCell(u, true)}</td>
+          <td><div class="preview" title="${u.myPreview}">${u.myPreview || "—"}</div></td>
+          <td class="num">${u.iReplies}</td>
+          <td class="num">${visitCount}</td>
+          <td><span class="status ${visitedBack ? "ok" : "bad"}">${visitedBack ? "已回访" : "未回访"}</span></td>
+        </tr>`;
+      }).join("");
+    }
+
+    // ========== 导航 ==========
+    const views = ["overview", "replied-me", "i-replied", "no-reply", "visit"];
+    function showView(id) {
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.toggle("active", v === id);
+      });
+      document.querySelectorAll("#nav button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.view === id);
+      });
+    }
+
+    document.getElementById("nav").addEventListener("click", e => {
+      const btn = e.target.closest("button[data-view]");
+      if (!btn) return;
+      showView(btn.dataset.view);
+    });
+
+    // ========== 详情弹层 ==========
+    const modal = document.getElementById("modal");
+    function openDetail(id) {
+      const u = users.find(x => x.id === id);
+      if (!u) return;
+      const av = document.getElementById("m-avatar");
+      av.style.background = u.color;
+      av.textContent = initials(u.name);
+      document.getElementById("m-name").textContent = u.name;
+      document.getElementById("m-handle").textContent = "@" + u.handle;
+      document.getElementById("m-tag").innerHTML = tagHtml(u.tag);
+      document.getElementById("m-rows").innerHTML = `
+        <div class="score-row"><span class="k">对方回复我 ${u.theyReplies} 次 × 2</span><span class="v">+${u.fromThem}</span></div>
+        <div class="score-row"><span class="k">我回复对方 ${u.iReplies} 次 × 1</span><span class="v">+${u.fromMe}</span></div>
+        <div class="score-row"><span class="k">双向额外 ${u.bidirectional ? "是" : "否"}</span><span class="v">+${u.mutual}</span></div>`;
+      document.getElementById("m-total").textContent = u.score;
+      modal.classList.add("open");
+    }
+    function closeDetail() { modal.classList.remove("open"); }
+
+    document.getElementById("m-close").addEventListener("click", closeDetail);
+    modal.addEventListener("click", e => { if (e.target === modal) closeDetail(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(); });
+
+    document.body.addEventListener("click", e => {
+      const el = e.target.closest("[data-id]");
+      if (!el) return;
+      openDetail(el.dataset.id);
+    });
+
+    // ========== 启动 ==========
+    renderOverview();
+    renderRepliedMe();
+    renderIReplied();
+    renderNoReply();
+    renderVisit();
+
+    // 控制台验证输出
+    console.table(users.map(u => ({
+      name: u.name,
+      they: u.theyReplies,
+      me: u.iReplies,
+      score: u.score,
+      ratio: u.ratio.toFixed(2) + "%",
+      tag: u.tag.label
+    })));
+    console.log("比例之和:", ratioSum.toFixed(4) + "%");
+    console.log("三卡片:", { 回复我的: countRepliedMe, 我回复的: countIReplied, 没回我的: countNoReply });
+    console.log("均分:", avgScore, "铁粉阈值:", avgScore * 3);
+  </script>
+</body>
+</html>
