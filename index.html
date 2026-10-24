@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>互动分析 · 原型 v4</title>
+  <title>互动分析</title>
   <style>
 
     :root {
@@ -654,11 +654,58 @@
       user-select: none;
     }
     .toggle input { accent-color: var(--accent); }
+
+    .import-modal { width: min(560px, 100%); }
+    .import-tabs { display:flex; gap:6px; margin-bottom:12px; }
+    .import-tabs button {
+      flex:1; appearance:none; border:1px solid var(--border); background:var(--bg-elev);
+      color:var(--text-muted); padding:8px; border-radius:8px; font:inherit; font-weight:600;
+      font-size:13px; cursor:pointer;
+    }
+    .import-tabs button.active { color:var(--text); border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+    .import-pane { display:none; }
+    .import-pane.active { display:block; }
+    .import-drop {
+      border:1.5px dashed var(--border); border-radius:10px; padding:28px 16px; text-align:center;
+      color:var(--text-muted); background:var(--bg-elev); cursor:pointer;
+    }
+    .import-drop:hover, .import-drop.drag { border-color:var(--accent); color:var(--text); }
+    .import-ta {
+      width:100%; min-height:160px; background:var(--bg-elev); border:1px solid var(--border);
+      border-radius:10px; padding:12px; color:var(--text); font-family:ui-monospace,Menlo,monospace;
+      font-size:12px; resize:vertical;
+    }
+    .import-ta:focus { outline:none; border-color:var(--accent); }
+    .import-err {
+      display:none; margin-top:10px; padding:10px 12px; border-radius:8px;
+      background:var(--bad-bg); color:#fb7185; font-size:12px; line-height:1.5;
+    }
+    .import-err.show { display:block; }
+    .import-help {
+      margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.65;
+      background:var(--bg-elev); border:1px dashed var(--border); border-radius:8px; padding:12px;
+    }
+    .import-help code {
+      font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#a3e635;
+      background:#12180f; padding:1px 5px; border-radius:4px;
+    }
+    .import-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:flex-end; }
+    .empty-hero {
+      display:none; max-width:520px; margin:48px auto; text-align:center; padding:32px 20px;
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    }
+    .empty-hero.show { display:block; }
+    .empty-hero h2 { font-size:20px; margin-bottom:8px; }
+    .empty-hero p { color:var(--text-muted); font-size:13px; margin-bottom:18px; line-height:1.55; }
+    .empty-hero .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    body.empty-mode main > .view { display:none !important; }
+    body.empty-mode .empty-hero { display:block; }
+    body.empty-mode #creator-bar { display:none; }
 </style>
 </head>
 <body>
   <div class="banner">
-    <strong>示例数据 · 原型 v4</strong> — 目前全免费 · <strong>非 X 官方</strong>
+    <strong>全免费</strong> — 数据仅在本机浏览器 · <strong>非 X 官方</strong>
   </div>
 
   <div class="creator-bar" id="creator-bar">
@@ -683,8 +730,10 @@
       <button type="button" data-view="visit">串门回访</button>
     </nav>
     <div class="header-actions">
-      <span class="status-pill on" id="status-pill">示例数据 · 原型 v4</span>
-      <button type="button" class="btn" id="btn-export" title="导出演示 CSV">导出 CSV</button>
+      <span class="status-pill on" id="status-pill">示例数据</span>
+      <button type="button" class="btn ghost" id="btn-sample" title="加载内置示例">加载示例</button>
+      <button type="button" class="btn" id="btn-import" title="导入 CSV">导入数据</button>
+      <button type="button" class="btn" id="btn-export" title="导出 CSV">导出 CSV</button>
       <button type="button" class="btn primary" id="btn-share">分享</button>
     </div>
   </header>
@@ -860,15 +909,72 @@
     </div>
   </div>
 
+
+  <div class="empty-hero" id="empty-hero">
+    <h2>开始分析互动</h2>
+    <p>上传或粘贴 CSV，在本地算出谁常回你、你常回谁。数据不会上传到服务器。</p>
+    <div class="row">
+      <button type="button" class="btn primary" id="btn-empty-import">导入数据</button>
+      <button type="button" class="btn" id="btn-empty-sample">加载示例</button>
+      <button type="button" class="btn ghost" id="btn-empty-template">下载 CSV 模板</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="import-modal" role="dialog" aria-modal="true" aria-label="导入数据">
+    <div class="modal import-modal">
+      <div class="modal-head">
+        <div>
+          <h3>导入互动数据</h3>
+          <div class="handle" style="margin-top:4px">CSV 仅在浏览器解析 · 不上传</div>
+        </div>
+        <button type="button" class="close" id="import-close" aria-label="关闭">×</button>
+      </div>
+      <div class="import-tabs" id="import-tabs">
+        <button type="button" class="active" data-pane="file">上传文件</button>
+        <button type="button" data-pane="paste">粘贴文本</button>
+      </div>
+      <div class="import-pane active" id="pane-file">
+        <div class="import-drop" id="import-drop">
+          <div style="font-weight:650;color:var(--text);margin-bottom:6px">点击选择或拖入 CSV</div>
+          <div style="font-size:12px">支持 .csv · UTF-8</div>
+          <input type="file" id="import-file" accept=".csv,text/csv,text/plain" hidden />
+        </div>
+        <div id="import-file-name" style="margin-top:8px;font-size:12px;color:var(--text-dim)"></div>
+      </div>
+      <div class="import-pane" id="pane-paste">
+        <textarea class="import-ta" id="import-paste" placeholder="粘贴完整 CSV（含表头）…" spellcheck="false"></textarea>
+      </div>
+      <div class="import-err" id="import-err"></div>
+      <div class="import-help">
+        <div style="font-weight:650;color:var(--text);margin-bottom:6px">字段说明（中英列名都认）</div>
+        必填：<code>handle</code>（用户名 / screen_name）· <code>they_replies</code>（对方回复数）· <code>i_replies</code>（我回复数）<br/>
+        可选：<code>name</code>（显示名）· <code>preview_they</code> / <code>preview_i</code> · <code>last_their_at</code> · <code>wait_hours</code><br/>
+        handle 可带或不带 @。串门回访用双向回复次数代理，无需 visit 列。
+      </div>
+      <div class="import-actions">
+        <button type="button" class="btn ghost" id="btn-dl-template">下载模板</button>
+        <button type="button" class="btn" id="btn-import-cancel">取消</button>
+        <button type="button" class="btn primary" id="btn-import-go">解析并加载</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
 
     const LS_ACCOUNT = "xia_v4_account";
     const LS_WEEKLY = "xia_v4_weekly_on";
+    const LS_MODE = "xia_prod_mode";
+    const LS_IMPORT = "xia_prod_import_raw";
+    const SHARE_URL = "https://snakeshu.github.io/x-interaction-analysis-proto/";
+    const COLORS = ["#e11d48","#8b5cf6","#06b6d4","#f59e0b","#10b981","#3b82f6","#64748b","#ec4899","#a855f7","#84cc16","#f43f5e","#14b8a6","#0ea5e9","#22c55e","#a78bfa","#f472b6"];
 
     let currentTpl = "overview";
     let activeAccountId = "me";
+    let dataMode = "sample"; // sample | imported | empty
+    let importedRaw = [];
+    let pendingCsvText = "";
 
     const ACCOUNTS = {
       me: {
@@ -962,11 +1068,8 @@
     let byScore = [], noReplyList = [], longestWait = null;
     let hookLine = "", hookInsight = "";
 
-    function loadAccount(id) {
-      activeAccountId = id;
-      localStorage.setItem(LS_ACCOUNT, id);
-      const acc = ACCOUNTS[id] || ACCOUNTS.me;
-      const scored = acc.raw.map(u => Object.assign({}, u, computeScore(u)));
+    function applyPeople(rawList) {
+      const scored = rawList.map(u => Object.assign({}, u, computeScore(u)));
       totalScore = scored.reduce((a, u) => a + u.score, 0);
       avgScore = scored.length ? totalScore / scored.length : 0;
       function tagFor(score) {
@@ -987,6 +1090,190 @@
       longestWait = noReplyList[0];
       hookLine = "你回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回你";
       hookInsight = "其中 " + countNoReply + " 人一直没回 · 最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—");
+    }
+
+    function loadAccount(id) {
+      activeAccountId = id;
+      localStorage.setItem(LS_ACCOUNT, id);
+      dataMode = "sample";
+      localStorage.setItem(LS_MODE, "sample");
+      const acc = ACCOUNTS[id] || ACCOUNTS.me;
+      applyPeople(acc.raw);
+    }
+
+    function loadImported(rawList) {
+      dataMode = "imported";
+      importedRaw = rawList;
+      localStorage.setItem(LS_MODE, "imported");
+      applyPeople(rawList);
+    }
+
+    function setEmptyMode() {
+      dataMode = "empty";
+      localStorage.setItem(LS_MODE, "empty");
+      users = []; totalScore = 0; avgScore = 0; ratioSum = 0;
+      countRepliedMe = 0; countIReplied = 0; countNoReply = 0;
+      byScore = []; noReplyList = []; longestWait = null;
+      hookLine = ""; hookInsight = "";
+    }
+
+    const COL_MAP = {
+      handle: ["handle","用户名","screen_name","screenname","账号"],
+      name: ["name","显示名","display_name","nickname","昵称"],
+      they_replies: ["they_replies","对方回复数","theyreplies","they","对方互动"],
+      i_replies: ["i_replies","我回复数","ireplies","me","我方互动","我互动"],
+      preview_they: ["preview_they","对方预览","their_preview","theirpreview","对方内容"],
+      preview_i: ["preview_i","我方预览","my_preview","mypreview","我方内容","我预览"],
+      last_their_at: ["last_their_at","对方最近互动","last_at","lasttheirat","最近时间"],
+      wait_hours: ["wait_hours","等待小时数","waithours","wait","等待"]
+    };
+
+    function normHeader(h) {
+      return String(h || "").replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, "_");
+    }
+
+    function parseCsv(text) {
+      if (text == null) throw new Error("空文件");
+      let s = String(text).replace(/^\uFEFF/, "");
+      if (!s.trim()) throw new Error("空文件，请粘贴或上传含表头的 CSV");
+      const rows = [];
+      let row = [], cur = "", i = 0, inQ = false;
+      while (i < s.length) {
+        const ch = s[i];
+        if (inQ) {
+          if (ch === '"') {
+            if (s[i+1] === '"') { cur += '"'; i += 2; continue; }
+            inQ = false; i++; continue;
+          }
+          cur += ch; i++; continue;
+        }
+        if (ch === '"') { inQ = true; i++; continue; }
+        if (ch === ",") { row.push(cur); cur = ""; i++; continue; }
+        if (ch === "\r") { i++; continue; }
+        if (ch === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
+        cur += ch; i++;
+      }
+      row.push(cur);
+      if (row.length > 1 || (row.length === 1 && row[0].trim() !== "")) rows.push(row);
+      if (!rows.length) throw new Error("空文件，请粘贴或上传含表头的 CSV");
+      const headers = rows[0].map(normHeader);
+      if (!headers.some(Boolean)) throw new Error("缺少表头行");
+      const idx = {};
+      Object.keys(COL_MAP).forEach(key => {
+        const aliases = COL_MAP[key].map(normHeader);
+        const found = headers.findIndex(h => aliases.includes(h));
+        if (found >= 0) idx[key] = found;
+      });
+      if (idx.handle === undefined) throw new Error("缺少必填列：handle（或 用户名 / screen_name）");
+      if (idx.they_replies === undefined) throw new Error("缺少必填列：they_replies（或 对方回复数）");
+      if (idx.i_replies === undefined) throw new Error("缺少必填列：i_replies（或 我回复数）");
+      const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ""));
+      if (!dataRows.length) throw new Error("没有数据行");
+      const now = Date.now();
+      const people = [];
+      const seen = new Set();
+      dataRows.forEach((r, n) => {
+        let handle = String(r[idx.handle] || "").trim().replace(/^@+/, "");
+        if (!handle) return;
+        const key = handle.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        const name = idx.name !== undefined ? String(r[idx.name] || "").trim() : "";
+        const they = Math.max(0, parseInt(String(r[idx.they_replies] || "0").trim(), 10) || 0);
+        const me = Math.max(0, parseInt(String(r[idx.i_replies] || "0").trim(), 10) || 0);
+        const theirPreview = idx.preview_they !== undefined ? String(r[idx.preview_they] || "").trim() : "";
+        const myPreview = idx.preview_i !== undefined ? String(r[idx.preview_i] || "").trim() : "";
+        const lastTheirAt = idx.last_their_at !== undefined ? String(r[idx.last_their_at] || "").trim() : "";
+        let waitHours = 0;
+        if (idx.wait_hours !== undefined && String(r[idx.wait_hours] || "").trim() !== "") {
+          waitHours = Math.max(0, parseInt(String(r[idx.wait_hours]).trim(), 10) || 0);
+        } else if (they === 0 && me > 0 && lastTheirAt) {
+          const t = Date.parse(lastTheirAt.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/, "$1T$2:00"));
+          if (!isNaN(t)) waitHours = Math.max(0, Math.round((now - t) / 3600000));
+        } else if (they === 0 && me > 0) {
+          waitHours = 0;
+        }
+        const color = COLORS[Math.abs(hashStr(key)) % COLORS.length];
+        people.push({
+          id: "imp_" + n + "_" + key.slice(0, 24),
+          name: name || handle,
+          handle: handle,
+          color: color,
+          theyReplies: they,
+          iReplies: me,
+          theirPreview: theirPreview,
+          myPreview: myPreview,
+          lastTheirAt: lastTheirAt,
+          waitHours: waitHours
+        });
+      });
+      if (!people.length) throw new Error("没有有效的用户行（handle 不能为空）");
+      return people;
+    }
+
+    function hashStr(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+      return h;
+    }
+
+    const TEMPLATE_CSV = "\uFEFF" + [
+      "handle,name,they_replies,i_replies,preview_they,preview_i,last_their_at,wait_hours",
+      "linxz,林晓舟,9,5,这个观点很有意思,感谢反馈,2026-10-23 21:14,0",
+      "ake_dev,阿可,4,3,同款踩坑,部署脚本能开源吗,2026-10-22 11:02,0",
+      "xiaoman,小满,0,4,,新封面好好看,,120",
+      "qinghe,青禾,3,1,早啊今天也冲,早安,2026-10-24 07:55,0",
+      "nanfeng,南风,0,3,,这篇写太好了,,72"
+    ].join("\n");
+
+    function downloadTemplate() {
+      const blob = new Blob([TEMPLATE_CSV], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "interact-template.csv";
+      a.click();
+      toast("已下载 CSV 模板");
+    }
+
+    function showImportErr(msg) {
+      const el = document.getElementById("import-err");
+      el.textContent = msg || "";
+      el.classList.toggle("show", !!msg);
+    }
+
+    function openImport() {
+      showImportErr("");
+      pendingCsvText = "";
+      document.getElementById("import-file-name").textContent = "";
+      document.getElementById("import-paste").value = "";
+      document.getElementById("import-file").value = "";
+      document.getElementById("import-modal").classList.add("open");
+    }
+    function closeImport() { document.getElementById("import-modal").classList.remove("open"); }
+
+    function updateStatusUI() {
+      const pill = document.getElementById("status-pill");
+      const bar = document.getElementById("creator-bar");
+      const empty = document.getElementById("empty-hero");
+      document.body.classList.toggle("empty-mode", dataMode === "empty");
+      if (dataMode === "imported") {
+        pill.textContent = "已导入 · " + users.length + " 人";
+        pill.classList.add("on");
+        bar.style.display = "none";
+        empty.classList.remove("show");
+      } else if (dataMode === "sample") {
+        pill.textContent = "示例数据";
+        pill.classList.add("on");
+        bar.style.display = "";
+        empty.classList.remove("show");
+      } else {
+        pill.textContent = "未加载数据";
+        pill.classList.remove("on");
+        bar.style.display = "none";
+        empty.classList.add("show");
+      }
+      document.getElementById("btn-export").disabled = users.length === 0;
+      document.getElementById("btn-share").disabled = users.length === 0;
     }
 
     function tagHtml(tag) {
@@ -1015,6 +1302,7 @@
         '<option value="' + a.id + '"' + (a.id === activeAccountId ? " selected" : "") + '>' + a.label + '</option>'
       ).join("");
       document.getElementById("weekly-toggle").checked = localStorage.getItem(LS_WEEKLY) === "1";
+      updateStatusUI();
     }
 
     function renderOverview() {
@@ -1038,7 +1326,7 @@
       document.getElementById("footnote").innerHTML =
         "计分：对方回我×2 + 我回对方×1 + 双向额外+1。标签：铁粉 / 粉丝 / 路人。" +
         "当前均分 <code>" + avgScore.toFixed(2) + "</code>。比例之和 <code>" + ratioSum.toFixed(2) + "%</code>。" +
-        "目前全免费 · 五视图全量名单与导出均可直接使用。";
+        "数据仅在本机 · 全免费 · 非 X 官方。";
     }
 
     function renderRepliedMe() {
@@ -1133,7 +1421,7 @@
       ctx.fill();
       ctx.fillStyle = "#fbbf24";
       ctx.font = "600 20px sans-serif";
-      ctx.fillText("示例 · 非 X 官方", 760, 120);
+      ctx.fillText((dataMode === "imported" ? "已导入" : "示例") + " · 非官方", 760, 120);
       ctx.fillStyle = "#2a2a30";
       ctx.fillRect(60, 1240, 960, 1);
       ctx.fillStyle = "#8b8b96";
@@ -1141,10 +1429,10 @@
       ctx.fillText("互动分析", 60, 1290);
       ctx.fillStyle = "#1d9bf0";
       ctx.font = "600 22px sans-serif";
-      ctx.fillText("interact.app", 220, 1290);
+      ctx.fillText("GitHub Pages", 220, 1290);
       ctx.fillStyle = "#5c5c66";
       ctx.font = "500 20px sans-serif";
-      ctx.fillText("非官方 · 示例", 860, 1290);
+      ctx.fillText("非 X 官方", 900, 1290);
     }
 
     function drawOverviewCard() {
@@ -1246,9 +1534,9 @@
       drawCardChrome("本周互动周报");
       const acc = ACCOUNTS[activeAccountId];
       ctx.fillStyle = "#f0f0f2"; ctx.font = "750 46px sans-serif";
-      ctx.fillText("互动周报（演示）", 60, 270);
+      ctx.fillText(dataMode === "imported" ? "互动周报" : "互动周报（演示）", 60, 270);
       ctx.fillStyle = "#8b8b96"; ctx.font = "500 26px sans-serif";
-      ctx.fillText(acc ? acc.label : "@you", 60, 320);
+      ctx.fillText(dataMode === "imported" ? ("已导入 · " + users.length + " 人") : (acc ? acc.label : "@you"), 60, 320);
       const metrics = [
         { label: "本周回复我的", val: countRepliedMe },
         { label: "我主动回复", val: countIReplied },
@@ -1276,10 +1564,10 @@
 
     function defaultPostText() {
       const map = {
-        overview: hookLine + "\n" + hookInsight + "\n用互动分看清谁真的在回你。\n#互动分析\nhttps://interact.app",
-        fans: "我的互动铁粉 Top5 出炉了。\n第一名 " + (byScore[0] ? byScore[0].name : "—") + "（" + (byScore[0] ? byScore[0].score : 0) + " 分）。\n#互动分析\nhttps://interact.app",
-        noreply: "串门 " + countIReplied + " 次，" + countNoReply + " 人没回访。\n最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—") + "（" + (longestWait ? longestWait.name : "") + "）。\n#互动分析\nhttps://interact.app",
-        weekly: "【周报】" + hookLine + "\n总互动分 " + totalScore + " · 未回访 " + countNoReply + "\n#互动分析 #周报\nhttps://interact.app"
+        overview: hookLine + "\n" + hookInsight + "\n用互动分看清谁真的在回你。\n#互动分析（非官方）\n" + SHARE_URL,
+        fans: "我的互动铁粉 Top5 出炉了。\n第一名 " + (byScore[0] ? byScore[0].name : "—") + "（" + (byScore[0] ? byScore[0].score : 0) + " 分）。\n#互动分析（非官方）\n" + SHARE_URL,
+        noreply: "串门 " + countIReplied + " 次，" + countNoReply + " 人没回访。\n最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—") + "（" + (longestWait ? longestWait.name : "") + "）。\n#互动分析（非官方）\n" + SHARE_URL,
+        weekly: "【周报】" + hookLine + "\n总互动分 " + totalScore + " · 未回访 " + countNoReply + "\n#互动分析（非官方）\n" + SHARE_URL
       };
       return map[currentTpl] || map.overview;
     }
@@ -1373,29 +1661,108 @@
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "interact-export-demo.csv";
+      a.download = "interact-export.csv";
       a.click();
-      toast("已导出演示 CSV");
+      toast("已导出 CSV");
     });
 
-    document.getElementById("account-select").addEventListener("change", e => {
-      loadAccount(e.target.value);
-      rebuild();
-      toast("已切换账号（演示）");
-    });
     document.getElementById("weekly-toggle").addEventListener("change", e => {
       localStorage.setItem(LS_WEEKLY, e.target.checked ? "1" : "0");
       toast(e.target.checked ? "周报自动模板已开（演示）" : "周报自动模板已关");
     });
 
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape") { closeDetail(); closeShare(); }
+      if (e.key === "Escape") { closeDetail(); closeShare(); closeImport(); }
     });
 
+    document.getElementById("btn-import").addEventListener("click", openImport);
+    document.getElementById("btn-empty-import").addEventListener("click", openImport);
+    document.getElementById("import-close").addEventListener("click", closeImport);
+    document.getElementById("btn-import-cancel").addEventListener("click", closeImport);
+    document.getElementById("import-modal").addEventListener("click", e => { if (e.target.id === "import-modal") closeImport(); });
+    document.getElementById("btn-dl-template").addEventListener("click", downloadTemplate);
+    document.getElementById("btn-empty-template").addEventListener("click", downloadTemplate);
+
+    document.getElementById("import-tabs").addEventListener("click", e => {
+      const b = e.target.closest("button[data-pane]");
+      if (!b) return;
+      document.querySelectorAll("#import-tabs button").forEach(x => x.classList.toggle("active", x === b));
+      document.querySelectorAll(".import-pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + b.dataset.pane));
+    });
+
+    const drop = document.getElementById("import-drop");
+    const fileInput = document.getElementById("import-file");
+    drop.addEventListener("click", () => fileInput.click());
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+    drop.addEventListener("drop", e => {
+      e.preventDefault(); drop.classList.remove("drag");
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) readImportFile(f);
+    });
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (f) readImportFile(f);
+    });
+    function readImportFile(f) {
+      document.getElementById("import-file-name").textContent = "已选：" + f.name;
+      const reader = new FileReader();
+      reader.onload = () => { pendingCsvText = String(reader.result || ""); showImportErr(""); };
+      reader.onerror = () => showImportErr("读取文件失败");
+      reader.readAsText(f, "UTF-8");
+    }
+
+    document.getElementById("btn-import-go").addEventListener("click", () => {
+      const paste = document.getElementById("import-paste").value;
+      const text = (paste && paste.trim()) ? paste : pendingCsvText;
+      try {
+        const people = parseCsv(text);
+        localStorage.setItem(LS_IMPORT, text);
+        loadImported(people);
+        rebuild();
+        drawCurrentCard();
+        closeImport();
+        toast("已导入 " + people.length + " 人");
+        showView("overview");
+      } catch (err) {
+        showImportErr(err.message || String(err));
+      }
+    });
+
+    function activateSample(id) {
+      loadAccount(id || activeAccountId || "me");
+      localStorage.removeItem(LS_IMPORT);
+      rebuild();
+      drawCurrentCard();
+      toast("已加载示例数据");
+      showView("overview");
+    }
+    document.getElementById("btn-sample").addEventListener("click", () => activateSample());
+    document.getElementById("btn-empty-sample").addEventListener("click", () => activateSample());
+
+    document.getElementById("account-select").addEventListener("change", e => {
+      if (dataMode !== "sample") return;
+      loadAccount(e.target.value);
+      rebuild();
+      toast("已切换账号（演示）");
+    });
+
+    // boot
+    const savedMode = localStorage.getItem(LS_MODE) || "sample";
     const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
-    loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+    if (savedMode === "imported" && localStorage.getItem(LS_IMPORT)) {
+      try {
+        loadImported(parseCsv(localStorage.getItem(LS_IMPORT)));
+      } catch (e) {
+        loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+      }
+    } else if (savedMode === "empty") {
+      setEmptyMode();
+    } else {
+      loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+    }
     rebuild();
-    drawCurrentCard();
+    if (users.length) drawCurrentCard();
 
   </script>
 </body>
