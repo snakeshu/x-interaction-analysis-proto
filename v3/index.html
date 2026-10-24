@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>互动分析 · 原型 v3</title>
+  <style>
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-elev: #141416;
+      --bg-card: #1a1a1e;
+      --bg-hover: #222228;
+      --border: #2a2a30;
+      --text: #f0f0f2;
+      --text-muted: #8b8b96;
+      --text-dim: #5c5c66;
+      --progress: #00ba7c;
+      --progress-track: #1e2a24;
+      --tag-super: #f97316;
+      --tag-super-bg: rgba(249, 115, 22, 0.15);
+      --tag-fan: #3b82f6;
+      --tag-fan-bg: rgba(59, 130, 246, 0.15);
+      --tag-passer: #6b7280;
+      --tag-passer-bg: rgba(107, 114, 128, 0.15);
+      --ok: #00ba7c;
+      --ok-bg: rgba(0, 186, 124, 0.12);
+      --bad: #f4212e;
+      --bad-bg: rgba(244, 33, 46, 0.12);
+      --accent: #1d9bf0;
+      --warn: #fbbf24;
+      --radius: 12px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+    .banner {
+      background: #1c1917;
+      border-bottom: 1px solid #292524;
+      color: #a8a29e;
+      font-size: 12px;
+      padding: 8px 20px;
+      text-align: center;
+    }
+    .banner strong { color: #fbbf24; font-weight: 600; }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 650;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+    .brand-mark {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #00ba7c, #1d9bf0);
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--bg-hover); }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; }
+    .btn.danger-soft {
+      background: var(--bad-bg);
+      border-color: rgba(244,33,46,.35);
+      color: #fb7185;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .unlock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+    }
+    .unlock-pill.on {
+      background: var(--ok-bg);
+      color: var(--ok);
+      border-color: rgba(0,186,124,.3);
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      width: 100%;
+      order: 3;
+    }
+    @media (min-width: 900px) {
+      nav.tabs { width: auto; order: 0; flex: 1; justify-content: center; }
+    }
+    nav.tabs button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    nav.tabs button:hover { color: var(--text); background: var(--bg-hover); }
+    nav.tabs button.active {
+      background: var(--bg-card);
+      color: var(--text);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+
+    main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* 反差钩子 */
+    .hook {
+      background: linear-gradient(135deg, #141820 0%, #1a1a1e 60%, #1a1512 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .hook-text {
+      font-size: clamp(20px, 4.5vw, 28px);
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+    }
+    .hook-text .hi { color: var(--warn); }
+    .hook-text .lo { color: #fb7185; }
+    .hook-sub {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .stat-card .label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+    }
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .panel-head h2 { font-size: 15px; font-weight: 650; }
+    .panel-head .meta { font-size: 12px; color: var(--text-muted); }
+
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 640px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .12s; }
+    tbody tr:hover { background: var(--bg-hover); }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 160px;
+    }
+    .user-cell.clickable { cursor: pointer; }
+    .user-cell.clickable:hover .name { color: var(--accent); }
+    .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 13px; font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .user-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 56px;
+      flex-shrink: 0;
+    }
+    .user-row-reply {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .name { font-weight: 600; font-size: 14px; }
+    .handle { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .tag.super { color: var(--tag-super); background: var(--tag-super-bg); }
+    .tag.fan { color: var(--tag-fan); background: var(--tag-fan-bg); }
+    .tag.passer { color: var(--tag-passer); background: var(--tag-passer-bg); }
+    .preview {
+      color: var(--text-muted);
+      font-size: 13px;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .time { color: var(--text-dim); font-size: 12px; white-space: nowrap; }
+    .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .progress-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 140px;
+    }
+    .bar {
+      flex: 1;
+      height: 6px;
+      background: var(--progress-track);
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+    .bar > i {
+      display: block;
+      height: 100%;
+      background: var(--progress);
+      border-radius: 999px;
+    }
+    .pct {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      min-width: 42px;
+      text-align: right;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status.ok { color: var(--ok); background: var(--ok-bg); }
+    .status.bad { color: var(--bad); background: var(--bad-bg); }
+
+    .footnote {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: var(--bg-elev);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .footnote code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #a3e635;
+      background: #12180f;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* 付费墙 */
+    .paywall-wrap { position: relative; }
+    .paywall-blur {
+      filter: blur(5px);
+      pointer-events: none;
+      user-select: none;
+      opacity: .55;
+    }
+    .paywall-card {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(180deg, rgba(10,10,11,.15) 0%, rgba(10,10,11,.72) 40%, rgba(10,10,11,.88) 100%);
+      z-index: 5;
+    }
+    .paywall-inner {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    }
+    .paywall-inner h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .paywall-inner p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .price-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .price-tag {
+      font-size: 12px;
+      font-weight: 650;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-elev);
+      color: var(--text);
+    }
+    .price-tag em {
+      font-style: normal;
+      color: var(--warn);
+      font-size: 15px;
+    }
+
+    /* Modal 通用 */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: min(420px, 100%);
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-head .avatar { width: 48px; height: 48px; font-size: 16px; }
+    .modal h3 { font-size: 16px; font-weight: 650; }
+    .modal .close {
+      margin-left: auto;
+      appearance: none;
+      border: none;
+      background: var(--bg-hover);
+      color: var(--text-muted);
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .modal .close:hover { color: var(--text); }
+    .score-rows { display: flex; flex-direction: column; gap: 8px; }
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--bg-elev);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .score-row .k { color: var(--text-muted); }
+    .score-row .v { font-weight: 650; font-variant-numeric: tabular-nums; }
+    .score-total {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1f2937;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: transform .25s, opacity .25s;
+      pointer-events: none;
+      border: 1px solid #374151;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* 分享抽屉 */
+    .share-modal {
+      width: min(920px, 100%);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      max-height: min(92vh, 860px);
+    }
+    .share-modal .share-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .share-modal .share-top h3 { font-size: 16px; }
+    .share-body {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+    @media (max-width: 720px) {
+      .share-body { grid-template-columns: 1fr; overflow-y: auto; }
+    }
+    .share-side {
+      border-right: 1px solid var(--border);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--bg-elev);
+    }
+    @media (max-width: 720px) {
+      .share-side {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+    .tpl-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: left;
+      width: 100%;
+    }
+    @media (max-width: 720px) {
+      .tpl-btn { width: auto; flex: 1 1 auto; text-align: center; }
+    }
+    .tpl-btn.active {
+      color: var(--text);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .share-main {
+      padding: 16px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .share-preview-wrap {
+      width: min(100%, 320px);
+      aspect-ratio: 1080 / 1350;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4);
+    }
+    .share-preview-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .share-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+      padding-bottom: 8px;
+    }
+    .copy-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+  
+    .brand-sub {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-top: 1px;
+      letter-spacing: 0;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.12);
+      color: var(--warn);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+    }
+    .status-pill.on {
+      background: var(--ok-bg);
+      color: var(--ok);
+      border-color: rgba(0,186,124,.3);
+    }
+    .status-pill.out {
+      background: var(--bad-bg);
+      color: #fb7185;
+      border-color: rgba(244,33,46,.35);
+    }
+    .status-pill.pro {
+      background: rgba(29,155,240,.12);
+      color: var(--accent);
+      border-color: rgba(29,155,240,.3);
+    }
+    .status-pill.creator {
+      background: rgba(249,115,22,.12);
+      color: #fb923c;
+      border-color: rgba(249,115,22,.3);
+    }
+    .btn.gold {
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      border-color: transparent;
+      color: #fff;
+    }
+    .account-select {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      padding: 7px 28px 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, #8b8b96 50%), linear-gradient(135deg, #8b8b96 50%, transparent 50%);
+      background-position: calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    .paywall-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: min(860px, 100%);
+    }
+    @media (max-width: 780px) {
+      .paywall-tiers { grid-template-columns: 1fr; }
+    }
+    .tier-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 14px;
+      text-align: left;
+      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+    .tier-card.current {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 12px 32px rgba(0,0,0,.45);
+    }
+    .tier-card.featured { border-color: rgba(249,115,22,.55); }
+    .tier-badge {
+      position: absolute;
+      top: -9px; right: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #ea580c;
+      color: #fff;
+    }
+    .tier-name { font-size: 14px; font-weight: 700; }
+    .tier-price {
+      font-size: 22px;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+    .tier-price span { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    .tier-list {
+      list-style: none;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+    .tier-list li { padding: 2px 0; }
+    .tier-list li::before { content: "· "; color: var(--ok); font-weight: 700; }
+    .paywall-foot {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+    .modal-wide { width: min(920px, 100%); }
+    .copy-label {
+      width: 100%;
+      max-width: 480px;
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+    .copy-ta {
+      width: 100%;
+      max-width: 480px;
+      min-height: 110px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.55;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .copy-ta:focus { outline: none; border-color: var(--accent); }
+    .creator-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 20px;
+      background: #14120f;
+      border-bottom: 1px solid #292524;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .creator-bar.show { display: flex; }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle input { accent-color: var(--accent); }
+    .tpl-btn:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+  <div class="banner">
+    <strong>示例数据 · 原型 v3</strong> — 免费 3 次/月 · 专业 ¥29 · 创作者 ¥79。非真支付 · <strong>非 X 官方</strong>
+  </div>
+
+  <div class="creator-bar" id="creator-bar">
+    <span>创作者 · 多账号</span>
+    <select class="account-select" id="account-select" aria-label="切换账号"></select>
+    <label class="toggle"><input type="checkbox" id="weekly-toggle" /> 周报分享卡自动模板（演示）</label>
+    <span style="margin-left:auto;font-size:11px;color:var(--text-dim)">优先支持占位：工单通道 · 24h 响应（演示）</span>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">互</div>
+      <div>
+        <span>互动分析</span>
+        <span class="brand-sub">非 X 官方</span>
+      </div>
+    </div>
+    <nav class="tabs" id="nav" aria-label="视图切换">
+      <button type="button" data-view="overview" class="active">总览</button>
+      <button type="button" data-view="replied-me">谁回复了我</button>
+      <button type="button" data-view="i-replied">我回复了谁</button>
+      <button type="button" data-view="no-reply">没回我的</button>
+      <button type="button" data-view="visit">串门回访</button>
+    </nav>
+    <div class="header-actions">
+      <span class="status-pill" id="plan-pill">免费</span>
+      <span class="status-pill" id="quota-pill">免费剩余 3/3</span>
+      <button type="button" class="btn" id="btn-header-action">用 1 次免费额度看完整</button>
+      <button type="button" class="btn" id="btn-export" disabled title="专业档起可用">导出 CSV</button>
+      <button type="button" class="btn primary" id="btn-share">分享</button>
+      <button type="button" class="btn ghost" id="btn-plans" title="查看方案">方案</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view active" id="view-overview">
+      <div class="hook" id="hook">
+        <div>
+          <div class="hook-text" id="hook-text"></div>
+          <div class="hook-sub" id="hook-sub"></div>
+        </div>
+        <button type="button" class="btn primary" id="btn-hook-share">生成分享卡</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>互动最多</h2>
+          <span class="meta" id="overview-meta"></span>
+        </div>
+        <div class="paywall-wrap" id="overview-lock-wrap">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>标签</th>
+                  <th>互动次数</th>
+                  <th>占比</th>
+                </tr>
+              </thead>
+              <tbody id="overview-body"></tbody>
+            </table>
+          </div>
+          <div class="paywall-card" id="overview-paywall" hidden></div>
+        </div>
+      </div>
+      <div class="footnote" id="footnote"></div>
+    </section>
+
+    <section class="view" id="view-replied-me">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>谁回复了我</h2>
+          <span class="meta">按互动次数降序 · 免费 Top5</span>
+        </div>
+        <div class="paywall-wrap" id="replied-lock-wrap">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>回复预览</th>
+                  <th>时间</th>
+                  <th>占比</th>
+                </tr>
+              </thead>
+              <tbody id="replied-me-body"></tbody>
+            </table>
+          </div>
+          <div class="paywall-card" id="replied-paywall" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-i-replied">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>我回复了谁</h2>
+          <span class="meta">按我回复次数降序 · 无进度条</span>
+        </div>
+        <div class="paywall-wrap" id="ireplied-lock-wrap">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>内容预览</th>
+                  <th>状态</th>
+                  <th>我回复次数</th>
+                </tr>
+              </thead>
+              <tbody id="i-replied-body"></tbody>
+            </table>
+          </div>
+          <div class="paywall-card" id="ireplied-paywall" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-no-reply">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>我回复了但没回我的</h2>
+          <span class="meta">完整列表需完整分析或订阅</span>
+        </div>
+        <div class="paywall-wrap" id="noreply-lock-wrap">
+          <div class="table-wrap" id="noreply-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>内容预览</th>
+                  <th>我回复次数</th>
+                  <th>等待时长</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="no-reply-body"></tbody>
+            </table>
+          </div>
+          <div class="paywall-card" id="noreply-paywall" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-visit">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>串门回访</h2>
+          <span class="meta">完整列表需完整分析或订阅</span>
+        </div>
+        <div class="paywall-wrap" id="visit-lock-wrap">
+          <div class="table-wrap" id="visit-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>我串门内容预览</th>
+                  <th>我串门次数</th>
+                  <th>回访次数</th>
+                  <th>回访状态</th>
+                </tr>
+              </thead>
+              <tbody id="visit-body"></tbody>
+            </table>
+          </div>
+          <div class="paywall-card" id="visit-paywall" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="avatar" id="m-avatar"></div>
+        <div>
+          <h3 id="m-name"></h3>
+          <div class="handle" id="m-handle"></div>
+          <div style="margin-top:6px" id="m-tag"></div>
+        </div>
+        <button type="button" class="close" id="m-close" aria-label="关闭">×</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">计分追溯（对方回我×2 + 我回对方×1 + 双向额外+1）</p>
+      <div class="score-rows" id="m-rows"></div>
+      <div class="score-total">
+        <span>互动次数</span>
+        <span id="m-total"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="plans-modal" role="dialog" aria-modal="true" aria-label="方案">
+    <div class="modal modal-wide" style="padding:18px">
+      <div class="modal-head" style="margin-bottom:12px">
+        <div>
+          <h3>选择方案</h3>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:4px">非真支付 · 示例数据 · 非 X 官方。解锁不要求发帖。</p>
+        </div>
+        <button type="button" class="close" id="plans-close" aria-label="关闭">×</button>
+      </div>
+      <div id="plans-body"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="share-modal" role="dialog" aria-modal="true" aria-label="分享卡">
+    <div class="modal share-modal">
+      <div class="share-top">
+        <h3>分享卡</h3>
+        <button type="button" class="close" id="share-close" aria-label="关闭">×</button>
+      </div>
+      <div class="share-body">
+        <aside class="share-side">
+          <button type="button" class="tpl-btn active" data-tpl="overview">总览卡</button>
+          <button type="button" class="tpl-btn" data-tpl="fans">铁粉榜卡</button>
+          <button type="button" class="tpl-btn" data-tpl="noreply">未回访卡</button>
+          <button type="button" class="tpl-btn" data-tpl="weekly" id="tpl-weekly">周报卡 · 创作者</button>
+        </aside>
+        <div class="share-main">
+          <div class="share-preview-wrap">
+            <canvas id="share-canvas" width="1080" height="1350"></canvas>
+          </div>
+          <div class="share-actions">
+            <button type="button" class="btn primary" id="btn-dl-png">下载图片</button>
+            <button type="button" class="btn" id="btn-copy-text">复制发帖文案</button>
+          </div>
+          <div class="copy-label">自愿分享，请勿刷屏；不用发帖换权益。文案可编辑后再复制。</div>
+          <textarea class="copy-ta" id="copy-preview" rows="5"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+
+    const FREE_TOP = 5;
+    const FREE_QUOTA = 3;
+    const LS_FREE_LEFT = "xia_v3_free_left";
+    const LS_FREE_MONTH = "xia_v3_free_month";
+    const LS_PLAN = "xia_v3_plan";
+    const LS_SUB_UNTIL = "xia_v3_sub_until";
+    const LS_ACCOUNT = "xia_v3_account";
+    const LS_WEEKLY = "xia_v3_weekly_on";
+    const SS_FULL = "xia_v3_session_full";
+
+    let currentTpl = "overview";
+    let activeAccountId = "me";
+
+    const ACCOUNTS = {
+      me: {
+        id: "me",
+        label: "@you · 主账号",
+        raw: [
+          { id:"u1", name:"林晓舟", handle:"linxz", color:"#e11d48", theyReplies:9, iReplies:5,
+            theirPreview:"这个观点很有意思，展开聊聊？", myPreview:"感谢反馈，下一篇会写更细。",
+            lastTheirAt:"2026-10-23 21:14", waitHours:0 },
+          { id:"u2", name:"阿可", handle:"ake_dev", color:"#8b5cf6", theyReplies:4, iReplies:3,
+            theirPreview:"同款踩坑，已收藏。", myPreview:"你那边的部署脚本能开源一份吗？",
+            lastTheirAt:"2026-10-22 11:02", waitHours:0 },
+          { id:"u3", name:"北辰", handle:"beichen_ai", color:"#06b6d4", theyReplies:2, iReplies:6,
+            theirPreview:"同意，评测口径要统一。", myPreview:"你们 benchmark 用的是哪套集？",
+            lastTheirAt:"2026-10-20 09:30", waitHours:0 },
+          { id:"u4", name:"小满", handle:"xiaoman", color:"#f59e0b", theyReplies:0, iReplies:4,
+            theirPreview:"", myPreview:"新封面好好看，求工具栈～",
+            lastTheirAt:"", waitHours:120 },
+          { id:"u5", name:"青禾", handle:"qinghe", color:"#10b981", theyReplies:3, iReplies:1,
+            theirPreview:"早啊，今天也冲。", myPreview:"早安！",
+            lastTheirAt:"2026-10-24 07:55", waitHours:0 },
+          { id:"u6", name:"周予", handle:"zhouyu_pm", color:"#3b82f6", theyReplies:1, iReplies:2,
+            theirPreview:"需求文档链接发我一下。", myPreview:"原型已经放进仓库了。",
+            lastTheirAt:"2026-10-19 16:40", waitHours:0 },
+          { id:"u7", name:"匿名观察者", handle:"observer99", color:"#64748b", theyReplies:1, iReplies:0,
+            theirPreview:"路过点个赞。", myPreview:"",
+            lastTheirAt:"2026-10-18 13:20", waitHours:0 },
+          { id:"u8", name:"南风", handle:"nanfeng", color:"#ec4899", theyReplies:0, iReplies:3,
+            theirPreview:"", myPreview:"这篇写太好了，转发给团队了。",
+            lastTheirAt:"", waitHours:72 },
+          { id:"u9", name:"沐白", handle:"mubai_ux", color:"#a855f7", theyReplies:5, iReplies:4,
+            theirPreview:"交互稿第二版看过了，赞。", myPreview:"那一屏密度要不要再降一点？",
+            lastTheirAt:"2026-10-23 18:05", waitHours:0 },
+          { id:"u10", name:"老K", handle:"oldk", color:"#84cc16", theyReplies:0, iReplies:2,
+            theirPreview:"", myPreview:"求推荐一本产品方法论。",
+            lastTheirAt:"", waitHours:240 },
+          { id:"u11", name:"四月", handle:"siyue", color:"#f43f5e", theyReplies:2, iReplies:0,
+            theirPreview:"哈哈哈笑死。", myPreview:"",
+            lastTheirAt:"2026-10-21 22:11", waitHours:0 },
+          { id:"u12", name:"言蹊", handle:"yanxi", color:"#14b8a6", theyReplies:0, iReplies:1,
+            theirPreview:"", myPreview:"欢迎来串门～",
+            lastTheirAt:"", waitHours:36 }
+        ]
+      },
+      alt: {
+        id: "alt",
+        label: "@brand · 品牌号（演示）",
+        raw: [
+          { id:"a1", name:"产品君", handle:"pm_jun", color:"#0ea5e9", theyReplies:7, iReplies:4,
+            theirPreview:"路线图可以公开吗？", myPreview:"Q4 会发一版。",
+            lastTheirAt:"2026-10-23 12:00", waitHours:0 },
+          { id:"a2", name:"增长小分队", handle:"growth_x", color:"#22c55e", theyReplies:3, iReplies:5,
+            theirPreview:"转化漏斗想对一下。", myPreview:"数据看板已共享。",
+            lastTheirAt:"2026-10-22 15:40", waitHours:0 },
+          { id:"a3", name:"媒体观察", handle:"media_watch", color:"#a78bfa", theyReplies:0, iReplies:3,
+            theirPreview:"", myPreview:"报道提到我们了，感谢！",
+            lastTheirAt:"", waitHours:96 },
+          { id:"a4", name:"社区志愿者", handle:"vol_cn", color:"#f472b6", theyReplies:5, iReplies:2,
+            theirPreview:"活动报名表填好了。", myPreview:"太感谢了！",
+            lastTheirAt:"2026-10-24 09:10", waitHours:0 },
+          { id:"a5", name:"竞品雷达", handle:"radar88", color:"#94a3b8", theyReplies:1, iReplies:0,
+            theirPreview:"有意思的切入点。", myPreview:"",
+            lastTheirAt:"2026-10-20 18:22", waitHours:0 },
+          { id:"a6", name:"沉默客户", handle:"quiet_c", color:"#78716c", theyReplies:0, iReplies:2,
+            theirPreview:"", myPreview:"想听听你们的使用体验～",
+            lastTheirAt:"", waitHours:180 }
+        ]
+      }
+    };
+
+    function monthKey(d = new Date()) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    }
+    function endOfMonth(d = new Date()) {
+      return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+    }
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "—";
+      return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    }
+
+    function ensureQuota() {
+      const m = monthKey();
+      if (localStorage.getItem(LS_FREE_MONTH) !== m) {
+        localStorage.setItem(LS_FREE_MONTH, m);
+        localStorage.setItem(LS_FREE_LEFT, String(FREE_QUOTA));
+      }
+      if (localStorage.getItem(LS_FREE_LEFT) == null) {
+        localStorage.setItem(LS_FREE_LEFT, String(FREE_QUOTA));
+      }
+    }
+    function getFreeLeft() {
+      ensureQuota();
+      return Math.max(0, parseInt(localStorage.getItem(LS_FREE_LEFT) || "0", 10) || 0);
+    }
+    function setFreeLeft(n) {
+      localStorage.setItem(LS_FREE_LEFT, String(Math.max(0, n)));
+      localStorage.setItem(LS_FREE_MONTH, monthKey());
+    }
+    function getPlan() {
+      const p = localStorage.getItem(LS_PLAN) || "free";
+      const until = localStorage.getItem(LS_SUB_UNTIL);
+      if ((p === "pro" || p === "creator") && (!until || new Date(until) < new Date())) {
+        localStorage.setItem(LS_PLAN, "free");
+        return "free";
+      }
+      return (p === "pro" || p === "creator") ? p : "free";
+    }
+    function getSubUntil() { return localStorage.getItem(LS_SUB_UNTIL) || ""; }
+    function isPaid() { const p = getPlan(); return p === "pro" || p === "creator"; }
+    function isCreator() { return getPlan() === "creator"; }
+    function hasSessionFull() { return sessionStorage.getItem(SS_FULL) === "1"; }
+    function hasFullAccess() { return isPaid() || hasSessionFull(); }
+    function canExport() { return isPaid(); }
+    function planLabel(p) { return p === "creator" ? "创作者" : p === "pro" ? "专业" : "免费"; }
+
+    function subscribe(plan) {
+      const until = endOfMonth();
+      localStorage.setItem(LS_PLAN, plan);
+      localStorage.setItem(LS_SUB_UNTIL, until.toISOString());
+      toast(plan === "creator" ? "已演示开通创作者 · 至本月末" : "已演示开通专业 · 至本月末");
+      closePlans();
+      rebuild();
+    }
+    function consumeFree() {
+      if (isPaid()) { toast("已订阅，无需消耗免费次数"); return; }
+      const left = getFreeLeft();
+      if (left <= 0) { openPlans(); toast("免费次数已用完"); return; }
+      setFreeLeft(left - 1);
+      sessionStorage.setItem(SS_FULL, "1");
+      toast("已消耗 1 次 · 本会话可看完整（剩 " + (left - 1) + "/3）");
+      rebuild();
+    }
+
+    function computeScore(u) {
+      const fromThem = u.theyReplies * 2;
+      const fromMe = u.iReplies * 1;
+      const mutual = (u.theyReplies > 0 && u.iReplies > 0) ? 1 : 0;
+      return { fromThem, fromMe, mutual, score: fromThem + fromMe + mutual };
+    }
+    function formatWait(hours) {
+      if (hours >= 48) {
+        const d = Math.floor(hours / 24);
+        const h = hours % 24;
+        return h ? d + " 天 " + h + " 小时" : d + " 天";
+      }
+      if (hours >= 24) return "1 天 " + (hours - 24) + " 小时";
+      return hours + " 小时";
+    }
+    function initials(name) { return name.slice(0, 1); }
+
+    let users = [], totalScore = 0, avgScore = 0, ratioSum = 0;
+    let countRepliedMe = 0, countIReplied = 0, countNoReply = 0;
+    let byScore = [], noReplyList = [], longestWait = null;
+    let hookLine = "", hookInsight = "";
+
+    function loadAccount(id) {
+      activeAccountId = id;
+      localStorage.setItem(LS_ACCOUNT, id);
+      const acc = ACCOUNTS[id] || ACCOUNTS.me;
+      const scored = acc.raw.map(u => Object.assign({}, u, computeScore(u)));
+      totalScore = scored.reduce((a, u) => a + u.score, 0);
+      avgScore = scored.length ? totalScore / scored.length : 0;
+      function tagFor(score) {
+        if (score >= avgScore * 3 && score >= 5) return { key: "super", label: "铁粉" };
+        if (score >= avgScore && score >= 2) return { key: "fan", label: "粉丝" };
+        return { key: "passer", label: "路人" };
+      }
+      users = scored.map(u => {
+        const ratio = totalScore ? (u.score / totalScore) * 100 : 0;
+        return Object.assign({}, u, { ratio, tag: tagFor(u.score), bidirectional: u.theyReplies > 0 && u.iReplies > 0 });
+      });
+      ratioSum = users.reduce((a, u) => a + u.ratio, 0);
+      countRepliedMe = users.filter(u => u.theyReplies > 0).length;
+      countIReplied = users.filter(u => u.iReplies > 0).length;
+      countNoReply = users.filter(u => u.iReplies > 0 && u.theyReplies === 0).length;
+      byScore = users.slice().sort((a, b) => b.score - a.score);
+      noReplyList = users.filter(u => u.iReplies > 0 && u.theyReplies === 0).sort((a, b) => b.waitHours - a.waitHours);
+      longestWait = noReplyList[0];
+      hookLine = "你回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回你";
+      hookInsight = "其中 " + countNoReply + " 人一直没回 · 最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—");
+    }
+
+    function tagHtml(tag) {
+      return '<span class="tag ' + tag.key + '">' + tag.label + '</span>';
+    }
+    function avatarHtml(u) {
+      return '<div class="avatar" style="background:' + u.color + '">' + initials(u.name) + '</div>';
+    }
+    function userCell(u, withTagInline) {
+      if (withTagInline === undefined) withTagInline = true;
+      return '<div class="user-cell clickable" data-id="' + u.id + '" title="查看计分追溯">' +
+        avatarHtml(u) +
+        '<div><div class="name">' + u.name + '</div><div class="handle">@' + u.handle + '</div>' +
+        (withTagInline ? '<div style="margin-top:4px">' + tagHtml(u.tag) + '</div>' : '') +
+        '</div></div>';
+    }
+    function progressHtml(ratio) {
+      const r = Math.round(ratio * 10) / 10;
+      return '<div class="progress-cell"><div class="bar"><i style="width:' + ratio + '%"></i></div>' +
+        '<span class="pct">' + r.toFixed(1) + '%</span></div>';
+    }
+
+    function tiersHtml() {
+      const plan = getPlan();
+      const left = getFreeLeft();
+      const full = hasFullAccess();
+      const freeBtn = (!full && left > 0)
+        ? '<button type="button" class="btn primary btn-consume-free">用免费次数（剩 ' + left + '）</button>'
+        : '<button type="button" class="btn" disabled>' + (plan === "free" && full ? "本会话已完整" : (left <= 0 ? "本月次数已用完" : "当前档")) + '</button>';
+      const proBtn = plan === "pro"
+        ? '<button type="button" class="btn" disabled>当前 · 至 ' + fmtDate(getSubUntil()) + '</button>'
+        : '<button type="button" class="btn primary btn-sub-pro">演示开通专业</button>';
+      const creatorBtn = plan === "creator"
+        ? '<button type="button" class="btn gold" disabled>当前 · 至 ' + fmtDate(getSubUntil()) + '</button>'
+        : '<button type="button" class="btn gold btn-sub-creator">演示开通创作者</button>';
+      return '<div class="paywall-tiers">' +
+        '<div class="tier-card' + (plan === "free" ? ' current' : '') + '">' +
+          '<div class="tier-name">免费</div>' +
+          '<div class="tier-price">¥0 <span>/ 月</span></div>' +
+          '<ul class="tier-list">' +
+            '<li>每月 ' + FREE_QUOTA + ' 次完整分析（剩 ' + left + '）</li>' +
+            '<li>总览三卡片 + Top' + FREE_TOP + '</li>' +
+            '<li>分享卡可用</li><li>无导出</li>' +
+          '</ul>' + freeBtn +
+        '</div>' +
+        '<div class="tier-card' + (plan === "pro" ? ' current' : '') + '">' +
+          '<div class="tier-name">专业</div>' +
+          '<div class="tier-price">¥29 <span>/ 月</span></div>' +
+          '<ul class="tier-list">' +
+            '<li>无限次完整分析</li><li>五视图全量名单</li>' +
+            '<li>导出 CSV（演示）</li><li>分享卡全部基础模板</li>' +
+          '</ul>' + proBtn +
+        '</div>' +
+        '<div class="tier-card featured' + (plan === "creator" ? ' current' : '') + '">' +
+          '<span class="tier-badge">含专业</span>' +
+          '<div class="tier-name">创作者</div>' +
+          '<div class="tier-price">¥79 <span>/ 月</span></div>' +
+          '<ul class="tier-list">' +
+            '<li>含专业全部能力</li><li>多账号切换（演示 2 个）</li>' +
+            '<li>周报分享卡模板</li><li>优先支持（占位）</li>' +
+          '</ul>' + creatorBtn +
+        '</div>' +
+        '<div class="paywall-foot">非真支付 · 示例数据 · 非 X 官方 · 不用发帖换权益</div>' +
+      '</div>';
+    }
+
+    function applyHeaderUI() {
+      const plan = getPlan();
+      const left = getFreeLeft();
+      const full = hasFullAccess();
+      const planPill = document.getElementById("plan-pill");
+      const quotaPill = document.getElementById("quota-pill");
+      const action = document.getElementById("btn-header-action");
+      const exportBtn = document.getElementById("btn-export");
+
+      planPill.textContent = plan === "free"
+        ? "档位 · 免费"
+        : ("订阅中 · " + planLabel(plan) + " · 至 " + fmtDate(getSubUntil()));
+      planPill.className = "status-pill " + (plan === "creator" ? "creator" : plan === "pro" ? "pro" : "");
+
+      if (plan === "free") {
+        if (full) {
+          quotaPill.textContent = "本会话完整 · 月剩 " + left + "/" + FREE_QUOTA;
+          quotaPill.className = "status-pill on";
+        } else if (left > 0) {
+          quotaPill.textContent = "免费剩余 " + left + "/" + FREE_QUOTA;
+          quotaPill.className = "status-pill";
+        } else {
+          quotaPill.textContent = "免费已用完";
+          quotaPill.className = "status-pill out";
+        }
+      } else {
+        quotaPill.textContent = "无限次";
+        quotaPill.className = "status-pill on";
+      }
+
+      if (plan !== "free") {
+        action.textContent = "导出可用";
+        action.disabled = true;
+        action.className = "btn";
+      } else if (left > 0 && !full) {
+        action.textContent = "用 1 次免费额度看完整";
+        action.disabled = false;
+        action.className = "btn primary";
+      } else if (left <= 0 && !full) {
+        action.textContent = "订阅 ¥29 起";
+        action.disabled = false;
+        action.className = "btn primary";
+      } else {
+        action.textContent = "查看方案";
+        action.disabled = false;
+        action.className = "btn";
+      }
+
+      exportBtn.disabled = !canExport();
+      exportBtn.title = canExport() ? "导出演示 CSV" : "专业档起可用";
+
+      document.getElementById("creator-bar").classList.toggle("show", isCreator());
+      const sel = document.getElementById("account-select");
+      sel.innerHTML = Object.values(ACCOUNTS).map(a =>
+        '<option value="' + a.id + '"' + (a.id === activeAccountId ? " selected" : "") + '>' + a.label + '</option>'
+      ).join("");
+      document.getElementById("weekly-toggle").checked = localStorage.getItem(LS_WEEKLY) === "1";
+      document.getElementById("tpl-weekly").disabled = !isCreator();
+    }
+
+    function showOverlay(pw, opts) {
+      if (!opts.show) {
+        pw.hidden = true;
+        pw.innerHTML = "";
+        pw.style.height = "";
+        pw.style.top = "";
+        pw.style.bottom = "";
+        return;
+      }
+      pw.hidden = false;
+      pw.style.top = opts.top != null ? opts.top : "auto";
+      pw.style.bottom = opts.bottom != null ? opts.bottom : "0";
+      pw.style.height = opts.height || "55%";
+      pw.innerHTML = tiersHtml();
+    }
+
+    function renderOverview() {
+      document.getElementById("hook-text").innerHTML =
+        '你回了 <span class="hi">' + countIReplied + '</span> 人，只有 <span class="lo">' + countRepliedMe + '</span> 人回你';
+      document.getElementById("hook-sub").textContent = hookInsight;
+      document.getElementById("stats").innerHTML =
+        '<div class="stat-card"><div class="label">回复我的</div><div class="value">' + countRepliedMe + '</div><div class="hint">对方回复次数 &gt; 0 的用户数</div></div>' +
+        '<div class="stat-card"><div class="label">我回复的</div><div class="value">' + countIReplied + '</div><div class="hint">我回复次数 &gt; 0 的用户数</div></div>' +
+        '<div class="stat-card"><div class="label">没回我的</div><div class="value">' + countNoReply + '</div><div class="hint">我有回复 · 对方零回复</div></div>';
+
+      const full = hasFullAccess();
+      const hiddenCount = Math.max(0, byScore.length - (full ? byScore.length : FREE_TOP));
+      document.getElementById("overview-meta").textContent = full
+        ? (byScore.length + " 人 · 总互动分 " + totalScore + " · 均分 " + avgScore.toFixed(2))
+        : ("免费 Top " + FREE_TOP + " · 共 " + byScore.length + " 人");
+
+      document.getElementById("overview-body").innerHTML = byScore.map((u, i) =>
+        '<tr class="' + (!full && i >= FREE_TOP ? "locked-row" : "") + '">' +
+        '<td>' + userCell(u, false) + '</td><td>' + tagHtml(u.tag) + '</td>' +
+        '<td class="num">' + u.score + '</td><td>' + progressHtml(u.ratio) + '</td></tr>'
+      ).join("");
+
+      const pw = document.getElementById("overview-paywall");
+      document.querySelector("#overview-lock-wrap .table-wrap").classList.remove("paywall-blur");
+      if (!full && hiddenCount > 0) showOverlay(pw, { show: true, height: "58%", bottom: "0", top: "auto" });
+      else showOverlay(pw, { show: false });
+
+      document.getElementById("footnote").innerHTML =
+        "计分：对方回我×2 + 我回对方×1 + 双向额外+1。标签规则见文档。" +
+        "当前均分 <code>" + avgScore.toFixed(2) + "</code>。比例之和 <code>" + ratioSum.toFixed(2) + "%</code>。" +
+        "当前档 <code>" + planLabel(getPlan()) + "</code> · " +
+        (full ? "<strong style='color:var(--ok)'>完整分析可见</strong>" : "免费可见 Top5");
+    }
+
+    function renderRepliedMe() {
+      const list = users.filter(u => u.theyReplies > 0).sort((a, b) => b.score - a.score);
+      const full = hasFullAccess();
+      document.getElementById("replied-me-body").innerHTML = list.map((u, i) =>
+        '<tr class="' + (!full && i >= FREE_TOP ? "locked-row" : "") + '"><td>' +
+        '<div class="user-row-reply clickable" data-id="' + u.id + '" style="cursor:pointer">' +
+        '<div class="user-stack">' + avatarHtml(u) + tagHtml(u.tag) + '</div>' +
+        '<div><div class="name">' + u.name + '</div><div class="handle">@' + u.handle + '</div></div></div></td>' +
+        '<td><div class="preview" title="' + (u.theirPreview || "") + '">' + (u.theirPreview || "—") + '</div></td>' +
+        '<td class="time">' + (u.lastTheirAt || "—") + '</td><td>' + progressHtml(u.ratio) + '</td></tr>'
+      ).join("");
+      const pw = document.getElementById("replied-paywall");
+      document.querySelector("#replied-lock-wrap .table-wrap").classList.remove("paywall-blur");
+      if (!full && list.length > FREE_TOP) showOverlay(pw, { show: true, height: "52%", bottom: "0", top: "auto" });
+      else showOverlay(pw, { show: false });
+    }
+
+    function renderIReplied() {
+      const list = users.filter(u => u.iReplies > 0).sort((a, b) => b.iReplies - a.iReplies);
+      const full = hasFullAccess();
+      document.getElementById("i-replied-body").innerHTML = list.map((u, i) => {
+        const replied = u.theyReplies > 0;
+        return '<tr class="' + (!full && i >= FREE_TOP ? "locked-row" : "") + '">' +
+          '<td>' + userCell(u, true) + '</td>' +
+          '<td><div class="preview" title="' + (u.myPreview || "") + '">' + (u.myPreview || "—") + '</div></td>' +
+          '<td><span class="status ' + (replied ? "ok" : "bad") + '">' + (replied ? "已回复" : "未回复") + '</span></td>' +
+          '<td class="num">' + u.iReplies + '</td></tr>';
+      }).join("");
+      const pw = document.getElementById("ireplied-paywall");
+      if (!full && list.length > FREE_TOP) showOverlay(pw, { show: true, height: "52%", bottom: "0", top: "auto" });
+      else showOverlay(pw, { show: false });
+    }
+
+    function renderNoReply() {
+      const list = noReplyList;
+      const body = document.getElementById("no-reply-body");
+      const tw = document.getElementById("noreply-table-wrap");
+      const pw = document.getElementById("noreply-paywall");
+      const full = hasFullAccess();
+      body.innerHTML = list.map(u =>
+        '<tr><td>' + userCell(u, true) + '</td>' +
+        '<td><div class="preview">' + (u.myPreview || "—") + '</div></td>' +
+        '<td class="num">' + u.iReplies + '</td>' +
+        '<td class="time">' + formatWait(u.waitHours) + '</td>' +
+        '<td><span class="status bad">未回复</span></td></tr>'
+      ).join("");
+      if (!full) { tw.classList.add("paywall-blur"); showOverlay(pw, { show: true, height: "100%", top: "0", bottom: "0" }); }
+      else { tw.classList.remove("paywall-blur"); showOverlay(pw, { show: false }); }
+    }
+
+    function renderVisit() {
+      const list = users.filter(u => u.iReplies > 0).sort((a, b) => b.iReplies - a.iReplies);
+      const body = document.getElementById("visit-body");
+      const tw = document.getElementById("visit-table-wrap");
+      const pw = document.getElementById("visit-paywall");
+      const full = hasFullAccess();
+      body.innerHTML = list.map(u => {
+        const visitedBack = u.theyReplies > 0;
+        return '<tr><td>' + userCell(u, true) + '</td>' +
+          '<td><div class="preview">' + (u.myPreview || "—") + '</div></td>' +
+          '<td class="num">' + u.iReplies + '</td>' +
+          '<td class="num">' + (visitedBack ? u.theyReplies : 0) + '</td>' +
+          '<td><span class="status ' + (visitedBack ? "ok" : "bad") + '">' + (visitedBack ? "已回访" : "未回访") + '</span></td></tr>';
+      }).join("");
+      if (!full) { tw.classList.add("paywall-blur"); showOverlay(pw, { show: true, height: "100%", top: "0", bottom: "0" }); }
+      else { tw.classList.remove("paywall-blur"); showOverlay(pw, { show: false }); }
+    }
+
+    function rebuild() {
+      applyHeaderUI();
+      renderOverview();
+      renderRepliedMe();
+      renderIReplied();
+      renderNoReply();
+      renderVisit();
+      document.getElementById("plans-body").innerHTML = tiersHtml();
+    }
+
+    const canvas = document.getElementById("share-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function drawCardChrome(title) {
+      const g = ctx.createLinearGradient(0, 0, 0, 1350);
+      g.addColorStop(0, "#0c0c0e");
+      g.addColorStop(0.55, "#12141a");
+      g.addColorStop(1, "#0a0a0b");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1080, 1350);
+      const ag = ctx.createLinearGradient(60, 0, 1020, 0);
+      ag.addColorStop(0, "#00ba7c");
+      ag.addColorStop(1, "#1d9bf0");
+      ctx.fillStyle = ag;
+      ctx.fillRect(60, 48, 960, 6);
+      ctx.fillStyle = "#f0f0f2";
+      ctx.font = "700 36px sans-serif";
+      ctx.fillText("互动分析", 60, 120);
+      ctx.fillStyle = "#8b8b96";
+      ctx.font = "500 24px sans-serif";
+      ctx.fillText(title, 60, 160);
+      ctx.fillStyle = "rgba(251,191,36,0.15)";
+      roundRect(ctx, 740, 90, 280, 44, 22);
+      ctx.fill();
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "600 20px sans-serif";
+      ctx.fillText("示例 · 非 X 官方", 760, 120);
+      ctx.fillStyle = "#2a2a30";
+      ctx.fillRect(60, 1240, 960, 1);
+      ctx.fillStyle = "#8b8b96";
+      ctx.font = "500 22px sans-serif";
+      ctx.fillText("互动分析", 60, 1290);
+      ctx.fillStyle = "#1d9bf0";
+      ctx.font = "600 22px sans-serif";
+      ctx.fillText("interact.app", 220, 1290);
+      ctx.fillStyle = "#5c5c66";
+      ctx.font = "500 20px sans-serif";
+      ctx.fillText("非官方 · 示例", 860, 1290);
+    }
+
+    function drawOverviewCard() {
+      drawCardChrome("我的互动反差");
+      ctx.fillStyle = "#f0f0f2";
+      ctx.font = "750 52px sans-serif";
+      ctx.fillText("你回了 " + countIReplied + " 人", 60, 280);
+      ctx.fillStyle = "#fb7185";
+      ctx.fillText("只有 " + countRepliedMe + " 人回你", 60, 350);
+      ctx.fillStyle = "#8b8b96";
+      ctx.font = "500 26px sans-serif";
+      ctx.fillText(hookInsight, 60, 410);
+      const cards = [
+        { label: "回复我的", val: String(countRepliedMe), color: "#00ba7c" },
+        { label: "我回复的", val: String(countIReplied), color: "#1d9bf0" },
+        { label: "没回我的", val: String(countNoReply), color: "#fb7185" }
+      ];
+      cards.forEach((c, i) => {
+        const x = 60 + i * 320;
+        ctx.fillStyle = "#1a1a1e";
+        roundRect(ctx, x, 460, 300, 160, 20); ctx.fill();
+        ctx.strokeStyle = "#2a2a30"; ctx.lineWidth = 2;
+        roundRect(ctx, x, 460, 300, 160, 20); ctx.stroke();
+        ctx.fillStyle = "#8b8b96"; ctx.font = "600 22px sans-serif";
+        ctx.fillText(c.label, x + 24, 510);
+        ctx.fillStyle = c.color; ctx.font = "750 64px sans-serif";
+        ctx.fillText(c.val, x + 24, 580);
+      });
+      ctx.fillStyle = "#f0f0f2"; ctx.font = "700 30px sans-serif";
+      ctx.fillText("铁粉 Top 3", 60, 700);
+      byScore.slice(0, 3).forEach((u, i) => {
+        const y = 740 + i * 130;
+        ctx.fillStyle = "#1a1a1e";
+        roundRect(ctx, 60, y, 960, 110, 16); ctx.fill();
+        ctx.beginPath(); ctx.arc(120, y + 55, 32, 0, Math.PI * 2);
+        ctx.fillStyle = u.color; ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
+        ctx.textAlign = "center"; ctx.fillText(initials(u.name), 120, y + 64); ctx.textAlign = "left";
+        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif";
+        ctx.fillText(u.name, 180, y + 48);
+        ctx.fillStyle = "#8b8b96"; ctx.font = "500 22px sans-serif";
+        ctx.fillText("@" + u.handle + " · " + u.tag.label, 180, y + 82);
+        ctx.fillStyle = "#00ba7c"; ctx.font = "750 36px sans-serif";
+        ctx.textAlign = "right"; ctx.fillText(String(u.score), 980, y + 64); ctx.textAlign = "left";
+      });
+    }
+
+    function drawFansCard() {
+      drawCardChrome("互动铁粉榜");
+      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 48px sans-serif";
+      ctx.fillText("谁最常和你互动？", 60, 280);
+      ctx.fillStyle = "#8b8b96"; ctx.font = "500 26px sans-serif";
+      ctx.fillText("Top 5 · 总互动分 " + totalScore, 60, 330);
+      const top5 = byScore.slice(0, 5);
+      const maxScore = top5[0] ? top5[0].score : 1;
+      top5.forEach((u, i) => {
+        const y = 380 + i * 150;
+        ctx.fillStyle = "#1a1a1e";
+        roundRect(ctx, 60, y, 960, 130, 16); ctx.fill();
+        ctx.fillStyle = i === 0 ? "#fbbf24" : "#8b8b96";
+        ctx.font = "750 36px sans-serif"; ctx.fillText(String(i + 1), 90, y + 78);
+        ctx.beginPath(); ctx.arc(190, y + 65, 34, 0, Math.PI * 2);
+        ctx.fillStyle = u.color; ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
+        ctx.textAlign = "center"; ctx.fillText(initials(u.name), 190, y + 74); ctx.textAlign = "left";
+        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 250, y + 48);
+        const tagColor = u.tag.key === "super" ? "#f97316" : u.tag.key === "fan" ? "#3b82f6" : "#6b7280";
+        ctx.fillStyle = tagColor; ctx.font = "600 20px sans-serif"; ctx.fillText(u.tag.label, 250, y + 78);
+        const barW = Math.max(40, (u.score / maxScore) * 420);
+        ctx.fillStyle = "#1e2a24"; roundRect(ctx, 250, y + 92, 420, 14, 7); ctx.fill();
+        ctx.fillStyle = "#00ba7c"; roundRect(ctx, 250, y + 92, barW, 14, 7); ctx.fill();
+        ctx.fillStyle = "#00ba7c"; ctx.font = "750 34px sans-serif";
+        ctx.textAlign = "right"; ctx.fillText(String(u.score), 980, y + 78); ctx.textAlign = "left";
+      });
+    }
+
+    function drawNoReplyCard() {
+      drawCardChrome("串门未回访");
+      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 48px sans-serif";
+      ctx.fillText("你去串门，他们没回访", 60, 280);
+      ctx.fillStyle = "#fb7185"; ctx.font = "700 32px sans-serif";
+      ctx.fillText(noReplyList.length + " 人未回访", 60, 340);
+      noReplyList.forEach((u, i) => {
+        const y = 390 + i * 120;
+        ctx.fillStyle = "#1a1a1e"; roundRect(ctx, 60, y, 960, 100, 16); ctx.fill();
+        ctx.beginPath(); ctx.arc(100, y + 50, 10, 0, Math.PI * 2); ctx.fillStyle = "#f4212e"; ctx.fill();
+        ctx.beginPath(); ctx.arc(170, y + 50, 30, 0, Math.PI * 2); ctx.fillStyle = u.color; ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "700 24px sans-serif";
+        ctx.textAlign = "center"; ctx.fillText(initials(u.name), 170, y + 58); ctx.textAlign = "left";
+        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 230, y + 42);
+        ctx.fillStyle = "#8b8b96"; ctx.font = "500 22px sans-serif";
+        ctx.fillText("串门 " + u.iReplies + " 次 · 已等 " + formatWait(u.waitHours), 230, y + 76);
+        ctx.fillStyle = "#f4212e"; ctx.font = "700 24px sans-serif";
+        ctx.textAlign = "right"; ctx.fillText("未回访", 980, y + 58); ctx.textAlign = "left";
+      });
+    }
+
+    function drawWeeklyCard() {
+      drawCardChrome("本周互动周报");
+      const acc = ACCOUNTS[activeAccountId];
+      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 46px sans-serif";
+      ctx.fillText("创作者周报（演示）", 60, 270);
+      ctx.fillStyle = "#8b8b96"; ctx.font = "500 26px sans-serif";
+      ctx.fillText(acc ? acc.label : "@you", 60, 320);
+      const metrics = [
+        { label: "本周回复我的", val: countRepliedMe },
+        { label: "我主动回复", val: countIReplied },
+        { label: "未回访", val: countNoReply },
+        { label: "总互动分", val: totalScore }
+      ];
+      metrics.forEach((m, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        const x = 60 + col * 480, y = 380 + row * 180;
+        ctx.fillStyle = "#1a1a1e"; roundRect(ctx, x, y, 450, 150, 18); ctx.fill();
+        ctx.fillStyle = "#8b8b96"; ctx.font = "600 22px sans-serif"; ctx.fillText(m.label, x + 28, y + 50);
+        ctx.fillStyle = "#fbbf24"; ctx.font = "750 56px sans-serif"; ctx.fillText(String(m.val), x + 28, y + 120);
+      });
+      ctx.fillStyle = "#8b8b96"; ctx.font = "500 24px sans-serif";
+      ctx.fillText(hookLine, 60, 800);
+      ctx.fillText("自动模板 · 创作者档演示开关可开", 60, 850);
+    }
+
+    function drawCurrentCard() {
+      if (currentTpl === "overview") drawOverviewCard();
+      else if (currentTpl === "fans") drawFansCard();
+      else if (currentTpl === "weekly") drawWeeklyCard();
+      else drawNoReplyCard();
+    }
+
+    function defaultPostText() {
+      const map = {
+        overview: hookLine + "\n" + hookInsight + "\n用互动分看清谁真的在回你。\n#互动分析\nhttps://interact.app",
+        fans: "我的互动铁粉 Top5 出炉了。\n第一名 " + (byScore[0] ? byScore[0].name : "—") + "（" + (byScore[0] ? byScore[0].score : 0) + " 分）。\n#互动分析\nhttps://interact.app",
+        noreply: "串门 " + countIReplied + " 次，" + countNoReply + " 人没回访。\n最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—") + "（" + (longestWait ? longestWait.name : "") + "）。\n#互动分析\nhttps://interact.app",
+        weekly: "【周报】" + hookLine + "\n总互动分 " + totalScore + " · 未回访 " + countNoReply + "\n#互动分析 #创作者周报\nhttps://interact.app"
+      };
+      return map[currentTpl] || map.overview;
+    }
+
+    function openShare(tpl) {
+      if (tpl === "weekly" && !isCreator()) { toast("周报卡为创作者档"); openPlans(); return; }
+      if (tpl) currentTpl = tpl;
+      document.querySelectorAll(".tpl-btn").forEach(b => b.classList.toggle("active", b.dataset.tpl === currentTpl));
+      drawCurrentCard();
+      document.getElementById("copy-preview").value = defaultPostText();
+      document.getElementById("share-modal").classList.add("open");
+    }
+    function closeShare() { document.getElementById("share-modal").classList.remove("open"); }
+    function openPlans() {
+      document.getElementById("plans-body").innerHTML = tiersHtml();
+      document.getElementById("plans-modal").classList.add("open");
+    }
+    function closePlans() { document.getElementById("plans-modal").classList.remove("open"); }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(toast._tm);
+      toast._tm = setTimeout(() => t.classList.remove("show"), 2200);
+    }
+
+    const views = ["overview", "replied-me", "i-replied", "no-reply", "visit"];
+    function showView(id) {
+      views.forEach(v => document.getElementById("view-" + v).classList.toggle("active", v === id));
+      document.querySelectorAll("#nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.view === id));
+    }
+    document.getElementById("nav").addEventListener("click", e => {
+      const btn = e.target.closest("button[data-view]");
+      if (btn) showView(btn.dataset.view);
+    });
+
+    const modal = document.getElementById("modal");
+    function openDetail(id) {
+      const u = users.find(x => x.id === id);
+      if (!u) return;
+      const av = document.getElementById("m-avatar");
+      av.style.background = u.color;
+      av.textContent = initials(u.name);
+      document.getElementById("m-name").textContent = u.name;
+      document.getElementById("m-handle").textContent = "@" + u.handle;
+      document.getElementById("m-tag").innerHTML = tagHtml(u.tag);
+      document.getElementById("m-rows").innerHTML =
+        '<div class="score-row"><span class="k">对方回复我 ' + u.theyReplies + ' 次 × 2</span><span class="v">+' + u.fromThem + '</span></div>' +
+        '<div class="score-row"><span class="k">我回复对方 ' + u.iReplies + ' 次 × 1</span><span class="v">+' + u.fromMe + '</span></div>' +
+        '<div class="score-row"><span class="k">双向额外 ' + (u.bidirectional ? "是" : "否") + '</span><span class="v">+' + u.mutual + '</span></div>';
+      document.getElementById("m-total").textContent = u.score;
+      modal.classList.add("open");
+    }
+    function closeDetail() { modal.classList.remove("open"); }
+    document.getElementById("m-close").addEventListener("click", closeDetail);
+    modal.addEventListener("click", e => { if (e.target === modal) closeDetail(); });
+
+    document.body.addEventListener("click", e => {
+      if (e.target.closest(".btn-consume-free")) { consumeFree(); return; }
+      if (e.target.closest(".btn-sub-pro")) { subscribe("pro"); return; }
+      if (e.target.closest(".btn-sub-creator")) { subscribe("creator"); return; }
+      const el = e.target.closest("[data-id]");
+      if (el && !e.target.closest(".paywall-card") && !e.target.closest("#plans-modal")) openDetail(el.dataset.id);
+    });
+
+    document.getElementById("btn-header-action").addEventListener("click", () => {
+      const plan = getPlan();
+      const full = hasFullAccess();
+      const left = getFreeLeft();
+      if (plan !== "free") return;
+      if (left > 0 && !full) consumeFree();
+      else openPlans();
+    });
+    document.getElementById("btn-plans").addEventListener("click", openPlans);
+    document.getElementById("plans-close").addEventListener("click", closePlans);
+    document.getElementById("plans-modal").addEventListener("click", e => { if (e.target.id === "plans-modal") closePlans(); });
+
+    document.getElementById("btn-share").addEventListener("click", () => openShare("overview"));
+    document.getElementById("btn-hook-share").addEventListener("click", () => openShare("overview"));
+    document.getElementById("share-close").addEventListener("click", closeShare);
+    document.getElementById("share-modal").addEventListener("click", e => { if (e.target.id === "share-modal") closeShare(); });
+    document.querySelector(".share-side").addEventListener("click", e => {
+      const b = e.target.closest(".tpl-btn");
+      if (!b || b.disabled) return;
+      if (b.dataset.tpl === "weekly" && !isCreator()) { toast("周报卡为创作者档"); openPlans(); return; }
+      currentTpl = b.dataset.tpl;
+      document.querySelectorAll(".tpl-btn").forEach(x => x.classList.toggle("active", x === b));
+      drawCurrentCard();
+      document.getElementById("copy-preview").value = defaultPostText();
+    });
+    document.getElementById("btn-dl-png").addEventListener("click", () => {
+      drawCurrentCard();
+      const a = document.createElement("a");
+      a.download = "interact-" + currentTpl + ".png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+      toast("已下载 PNG");
+    });
+    document.getElementById("btn-copy-text").addEventListener("click", async () => {
+      const text = document.getElementById("copy-preview").value;
+      try { await navigator.clipboard.writeText(text); toast("文案已复制"); }
+      catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); ta.remove(); toast("文案已复制");
+      }
+    });
+    document.getElementById("btn-export").addEventListener("click", () => {
+      if (!canExport()) return;
+      const header = ["name","handle","tag","score","ratio","theyReplies","iReplies","waitHours"];
+      const rows = users.map(u => [u.name, u.handle, u.tag.label, u.score, u.ratio.toFixed(2), u.theyReplies, u.iReplies, u.waitHours].join(","));
+      const csv = "\uFEFF" + header.join(",") + "\n" + rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "interact-export-demo.csv";
+      a.click();
+      toast("已导出演示 CSV");
+    });
+
+    document.getElementById("account-select").addEventListener("change", e => {
+      loadAccount(e.target.value);
+      rebuild();
+      toast("已切换账号（演示）");
+    });
+    document.getElementById("weekly-toggle").addEventListener("change", e => {
+      localStorage.setItem(LS_WEEKLY, e.target.checked ? "1" : "0");
+      toast(e.target.checked ? "周报自动模板已开（演示）" : "周报自动模板已关");
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeDetail(); closeShare(); closePlans(); }
+    });
+
+    ensureQuota();
+    if (!localStorage.getItem(LS_PLAN)) localStorage.setItem(LS_PLAN, "free");
+    const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
+    loadAccount(isCreator() ? savedAcc : "me");
+    rebuild();
+    drawCurrentCard();
+  </script>
+</body>
+</html>
