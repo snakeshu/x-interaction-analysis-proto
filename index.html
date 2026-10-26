@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>互动分析 · 原型 v6 · 气泡图</title>
+  <title>互动分析 · 原型 v7 · 肥皂泡</title>
   <style>
     :root {
       --coral: #F18D8D;
@@ -60,7 +60,7 @@
           var(--magenta) 84px, var(--magenta) 112px,
           var(--yellow) 112px, var(--yellow) 140px
         );
-      opacity: 0.14;
+      opacity: 0.09;
       mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 45%, transparent 80%);
       -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 45%, transparent 80%);
     }
@@ -338,7 +338,7 @@
       min-height: 0;
       margin: 8px 10px;
       position: relative;
-      background: rgba(255,255,255,0.82);
+      background: rgba(255,252,248,0.72);
       border: 1px solid var(--border);
       border-radius: 16px;
       box-shadow: var(--shadow);
@@ -351,7 +351,7 @@
       inset: 0;
       pointer-events: none;
       background:
-        linear-gradient(180deg, rgba(233,30,99,0.06) 0%, transparent 28%, transparent 72%, rgba(77,187,235,0.07) 100%);
+        linear-gradient(180deg, rgba(233,30,99,0.04) 0%, transparent 30%, transparent 70%, rgba(77,187,235,0.05) 100%), radial-gradient(ellipse 55% 50% at 50% 48%, rgba(255,255,255,0.55) 0%, transparent 70%);
       z-index: 0;
     }
     .y-labels {
@@ -385,7 +385,7 @@
       position: absolute;
       left: 8px; right: 12px;
       height: 0;
-      border-top: 1px dashed rgba(240, 217, 200, 0.9);
+      border-top: 1px dashed rgba(240, 217, 200, 0.55);
     }
     .lane-guides i:nth-child(1) { top: 18%; }
     .lane-guides i:nth-child(2) { top: 50%; }
@@ -395,6 +395,12 @@
       inset: 0 0 0 26px;
       z-index: 3;
     }
+    @keyframes soap-float {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(var(--fx, 4px), calc(var(--fy, 6px) * -1)); }
+      50% { transform: translate(calc(var(--fx, 4px) * -0.6), var(--fy, 6px)); }
+      75% { transform: translate(calc(var(--fx, 4px) * 0.35), calc(var(--fy, 6px) * -0.45)); }
+    }
     .bubble {
       position: absolute;
       border-radius: 50%;
@@ -402,57 +408,123 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--text);
       font-weight: 700;
       cursor: grab;
       user-select: none;
       -webkit-user-select: none;
-      box-shadow: 0 6px 16px rgba(31,21,32,0.16), 0 0 0 2px rgba(255,255,255,0.65);
-      transition: box-shadow .15s, transform .12s;
+      /* soap: translucent wash + soft rim (color via --bubble-rgb) */
+      background:
+        radial-gradient(circle at 32% 26%, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.28) 28%, transparent 52%),
+        radial-gradient(circle at 70% 78%, rgba(var(--bubble-rgb), 0.22) 0%, transparent 55%),
+        rgba(var(--bubble-rgb), 0.18);
+      border: 1.5px solid rgba(255,255,255,0.72);
+      box-shadow:
+        inset 0 -10px 18px rgba(var(--bubble-rgb), 0.12),
+        inset 0 2px 6px rgba(255,255,255,0.55),
+        0 8px 22px rgba(31,21,32,0.10),
+        0 0 0 1px rgba(var(--bubble-rgb), 0.28);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      transition: box-shadow .15s;
       touch-action: none;
-      will-change: left, top;
+      will-change: left, top, transform;
+      overflow: visible;
+    }
+    .bubble::before {
+      content: "";
+      position: absolute;
+      top: 10%;
+      left: 16%;
+      width: 48%;
+      height: 30%;
+      border-radius: 50%;
+      background: linear-gradient(160deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.25) 55%, transparent 80%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bubble::after {
+      content: "";
+      position: absolute;
+      bottom: 14%;
+      right: 18%;
+      width: 22%;
+      height: 14%;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bubble.floating:not(.dragging) {
+      animation: soap-float var(--fdur, 5.5s) ease-in-out var(--fdelay, 0s) infinite;
     }
     .bubble:active, .bubble.dragging {
       cursor: grabbing;
       z-index: 20 !important;
-      box-shadow: 0 12px 28px rgba(233,30,99,0.28), 0 0 0 3px #fff;
-      transform: scale(1.06);
+      animation: none !important;
+      transform: scale(1.07);
+      box-shadow:
+        inset 0 -10px 18px rgba(var(--bubble-rgb), 0.16),
+        inset 0 2px 8px rgba(255,255,255,0.65),
+        0 14px 32px rgba(233,30,99,0.22),
+        0 0 0 2px rgba(255,255,255,0.95);
     }
     .bubble.selected {
       z-index: 15;
-      box-shadow: 0 10px 24px rgba(233,30,99,0.32), 0 0 0 3px var(--yellow);
+      box-shadow:
+        inset 0 -10px 18px rgba(var(--bubble-rgb), 0.14),
+        inset 0 2px 6px rgba(255,255,255,0.6),
+        0 10px 26px rgba(233,30,99,0.22),
+        0 0 0 2.5px var(--yellow);
     }
     .bubble.dim {
-      opacity: 0.28;
-      filter: grayscale(0.35);
+      opacity: 0.22;
+      filter: saturate(0.55);
     }
     .bubble .b-init {
+      position: relative;
+      z-index: 2;
       font-size: inherit;
       line-height: 1;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      color: var(--text);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.55);
     }
     .bubble .b-handle {
+      position: relative;
+      z-index: 2;
       font-size: 9px;
       font-weight: 650;
-      opacity: 0.95;
+      opacity: 0.88;
       margin-top: 2px;
       max-width: 90%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      color: var(--text-muted);
     }
     .bubble.small .b-handle { display: none; }
     .bubble-ring {
       position: absolute;
       inset: -3px;
       border-radius: 50%;
-      border: 2.5px solid transparent;
+      border: 2px solid transparent;
       pointer-events: none;
+      z-index: 0;
+      opacity: 0.85;
+      box-shadow: 0 0 10px rgba(var(--bubble-rgb), 0.25);
     }
-    .bubble.tag-super .bubble-ring { border-color: var(--orange); }
-    .bubble.tag-fan .bubble-ring { border-color: var(--sky); }
-    .bubble.tag-passer .bubble-ring { border-color: rgba(107,90,98,0.55); }
+    .bubble.tag-super {
+      --bubble-rgb: 247, 148, 29;
+    }
+    .bubble.tag-super .bubble-ring { border-color: rgba(247, 148, 29, 0.55); }
+    .bubble.tag-fan {
+      --bubble-rgb: 77, 187, 235;
+    }
+    .bubble.tag-fan .bubble-ring { border-color: rgba(77, 187, 235, 0.55); }
+    .bubble.tag-passer {
+      --bubble-rgb: 154, 135, 144;
+    }
+    .bubble.tag-passer .bubble-ring { border-color: rgba(154, 135, 144, 0.5); }
 
     .legend {
       position: absolute;
@@ -689,7 +761,7 @@
   <div class="app-shell" id="app-shell">
     <div class="paper-strip" aria-hidden="true"></div>
     <div class="banner">
-      <strong>原型 v6</strong> — 气泡图一屏 · X 授权演示 · <strong>非 X 官方</strong>
+      <strong>原型 v7</strong> — 肥皂泡一屏 · X 授权演示 · <strong>非 X 官方</strong>
     </div>
 
     <header class="topbar">
@@ -698,7 +770,7 @@
           <div class="brand-mark">互</div>
           <div>
             <span>互动分析</span>
-            <span class="brand-sub">非 X 官方 · 气泡图</span>
+            <span class="brand-sub">非 X 官方 · 肥皂泡</span>
           </div>
         </div>
         <div class="filters" id="filters" role="group" aria-label="标签筛选">
@@ -709,7 +781,7 @@
         </div>
       </div>
       <div class="topbar-row menu">
-        <div class="axis-hint">上 = 高回复（高分）· 下 = 低回复 · 拖动气泡 · 点选看详情 · 一屏全显示</div>
+        <div class="axis-hint">中间错落肥皂泡 · 上偏高回复 · 轻漂浮 · 拖动暂停漂浮 · 一屏全显示</div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
           <select class="account-select" id="account-select" aria-label="切换已授权账号"></select>
           <div class="user-chip" id="user-chip">
@@ -757,7 +829,7 @@
   <div class="login-hero" id="login-hero">
     <div style="position:absolute;top:0;left:0;right:0">
       <div class="paper-strip" aria-hidden="true"></div>
-      <div class="banner"><strong>原型 v6</strong> — 气泡图 · X 授权演示 · <strong>非 X 官方</strong></div>
+      <div class="banner"><strong>原型 v7</strong> — 肥皂泡 · X 授权演示 · <strong>非 X 官方</strong></div>
     </div>
     <div class="login-card">
       <div class="scallops" aria-hidden="true">
@@ -768,11 +840,11 @@
         <span style="background:var(--yellow)"></span>
       </div>
       <h1>互动分析</h1>
-      <p class="lead">用 X 授权登录后，在一屏气泡图里看谁常回你。<br/>高回复在上、低回复在下，气泡可拖动。</p>
+      <p class="lead">用 X 授权登录后，在一屏透明肥皂泡里看谁常回你。<br/>泡泡中间错落漂浮，高回复偏上，可拖动。</p>
       <div class="badge-row">
         <span class="badge">演示授权</span>
         <span class="badge warn">非 X 官方</span>
-        <span class="badge">气泡图 v6</span>
+        <span class="badge">肥皂泡 v7</span>
       </div>
       <button type="button" class="btn x-login" id="btn-login">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.849L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -825,8 +897,8 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const LS_ACCOUNT = "xia_v6_account";
-    const SS_AUTH = "xia_v6_authed";
+    const LS_ACCOUNT = "xia_v7_account";
+    const SS_AUTH = "xia_v7_authed";
     const SHARE_URL = "https://snakeshu.github.io/x-interaction-analysis-proto/";
 
     let activeAccountId = "me";
@@ -982,16 +1054,27 @@
       const range = Math.max(maxScore - minScore, 1);
       const minR = Math.max(18, Math.min(26, Math.floor(Math.min(w, h) / 18)));
       const maxR = Math.max(minR + 8, Math.min(46, Math.floor(Math.min(w, h) / 8)));
-      const pad = 4;
+      const pad = 6;
+      // center cluster: leave soft margin so bubbles don't hug edges
+      const clusterW = Math.min(w - 2 * pad, w * 0.58);
+      const clusterH = Math.min(h - 2 * pad, h * 0.64);
+      const cx0 = w / 2;
+      const cy0 = h / 2;
+      const golden = 0.6180339887;
 
       const nodes = users.map((u, i) => {
         const r = radiusFor(u, minR, maxR, maxVol);
-        let yNorm = (u.score - minScore) / range; // 1 = high
-        // high score -> top (small y)
-        let cy = pad + r + (1 - yNorm) * (h - 2 * pad - 2 * r);
-        // x: stagger by rank among similar scores
-        const golden = 0.6180339887;
-        let cx = pad + r + ((i * golden) % 1) * (w - 2 * pad - 2 * r);
+        const yNorm = (u.score - minScore) / range; // 1 = high
+        // high score -> upper part of central cluster
+        let cy = cy0 - clusterH / 2 + r + (1 - yNorm) * Math.max(8, clusterH - 2 * r);
+        // x toward mid-axis with golden/random stagger (not a grid)
+        const phase = (i * golden + u.score * 0.07) % 1;
+        const jitter = (phase - 0.5) * 2; // -1..1
+        const spread = 0.35 + 0.65 * (1 - Math.abs(yNorm - 0.55));
+        let cx = cx0 + jitter * (clusterW / 2) * spread;
+        // tiny deterministic wobble so peers with same score don't stack
+        cx += Math.sin(i * 2.399 + u.volume) * Math.min(14, clusterW * 0.04);
+        cy += Math.cos(i * 1.713 + u.score) * Math.min(10, clusterH * 0.035);
         if (keepManual && positions[u.id] && positions[u.id].manual) {
           cx = positions[u.id].x;
           cy = positions[u.id].y;
@@ -999,19 +1082,19 @@
         return { id: u.id, u: u, r: r, x: cx, y: cy, manual: !!(keepManual && positions[u.id] && positions[u.id].manual) };
       });
 
-      // collision resolve (skip pure manual pairs lightly still clamp)
-      for (let iter = 0; iter < 40; iter++) {
+      // collision resolve + soft pull toward center / score lane
+      for (let iter = 0; iter < 48; iter++) {
         for (let i = 0; i < nodes.length; i++) {
           for (let j = i + 1; j < nodes.length; j++) {
             const a = nodes[i], b = nodes[j];
             let dx = b.x - a.x, dy = b.y - a.y;
             let dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
-            const minDist = a.r + b.r + 4;
+            const minDist = a.r + b.r + 5;
             if (dist < minDist) {
               const push = (minDist - dist) / 2;
               dx /= dist; dy /= dist;
-              if (!a.manual) { a.x -= dx * push; a.y -= dy * push * 0.35; }
-              if (!b.manual) { b.x += dx * push; b.y += dy * push * 0.35; }
+              if (!a.manual) { a.x -= dx * push; a.y -= dy * push * 0.4; }
+              if (!b.manual) { b.x += dx * push; b.y += dy * push * 0.4; }
             }
           }
         }
@@ -1022,10 +1105,15 @@
             n.y = Math.min(h - n.r - pad, Math.max(n.r + pad, n.y));
             continue;
           }
-          // soft pull y back toward score lane
           const yNorm = (n.u.score - minScore) / range;
-          const targetY = pad + n.r + (1 - yNorm) * (h - 2 * pad - 2 * n.r);
-          n.y += (targetY - n.y) * 0.08;
+          const targetY = cy0 - clusterH / 2 + n.r + (1 - yNorm) * Math.max(8, clusterH - 2 * n.r);
+          n.y += (targetY - n.y) * 0.1;
+          // soft pull x toward mid-axis (cluster, not wall-to-wall)
+          n.x += (cx0 - n.x) * 0.035;
+          const halfW = clusterW / 2 + n.r * 0.2;
+          const halfH = clusterH / 2 + n.r * 0.15;
+          n.x = Math.min(cx0 + halfW, Math.max(cx0 - halfW, n.x));
+          n.y = Math.min(cy0 + halfH, Math.max(cy0 - halfH, n.y));
           n.x = Math.min(w - n.r - pad, Math.max(n.r + pad, n.x));
           n.y = Math.min(h - n.r - pad, Math.max(n.r + pad, n.y));
         }
@@ -1037,18 +1125,37 @@
       paintBubbles();
     }
 
+    function hexToRgb(hex) {
+      const h = (hex || "#888888").replace("#", "");
+      const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
+      const n = parseInt(full, 16);
+      if (isNaN(n)) return "136,136,136";
+      return ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255);
+    }
+
+    function floatParamsFor(u, i) {
+      // staggered drift: small amplitude, unique duration/delay
+      const seed = (i * 17 + u.score * 3 + u.volume * 5) % 97;
+      const fx = (3 + (seed % 7)) * (seed % 2 === 0 ? 1 : -1);
+      const fy = 4 + (seed % 8);
+      const fdur = (4.2 + (seed % 11) * 0.35).toFixed(2) + "s";
+      const fdelay = (-(seed % 19) * 0.37).toFixed(2) + "s";
+      return { fx: fx + "px", fy: fy + "px", fdur: fdur, fdelay: fdelay };
+    }
+
     function paintBubbles() {
       const layer = document.getElementById("bubble-layer");
-      const maxVol = Math.max.apply(null, users.map(u => u.volume).concat([1]));
-      layer.innerHTML = users.map(u => {
+      layer.innerHTML = users.map((u, i) => {
         const p = positions[u.id];
         if (!p) return "";
         const dim = filterKey !== "all" && u.tag.key !== filterKey;
         const selected = selectedId === u.id;
         const fontSize = Math.max(11, Math.floor(p.r * 0.42));
         const showHandle = p.r >= 28;
+        const fp = floatParamsFor(u, i);
         const cls = [
           "bubble",
+          "floating",
           "tag-" + u.tag.key,
           showHandle ? "" : "small",
           dim ? "dim" : "",
@@ -1057,8 +1164,11 @@
         const left = (p.x - p.r).toFixed(1);
         const top = (p.y - p.r).toFixed(1);
         const size = (p.r * 2).toFixed(1);
+        // prefer tag wash; lightly tint with user color via --bubble-rgb override only for passer variety
+        const rgb = hexToRgb(u.color);
         return '<div class="' + cls + '" data-id="' + u.id + '" style="left:' + left + 'px;top:' + top +
-          'px;width:' + size + 'px;height:' + size + 'px;background:' + u.color +
+          'px;width:' + size + 'px;height:' + size + 'px;--bubble-rgb:' + rgb +
+          ';--fx:' + fp.fx + ';--fy:' + fp.fy + ';--fdur:' + fp.fdur + ';--fdelay:' + fp.fdelay +
           ';font-size:' + fontSize + 'px;z-index:' + (10 + Math.round(u.score)) +
           '" title="@' + u.handle + ' · ' + u.tag.label + ' · 分 ' + u.score + '">' +
           '<div class="bubble-ring"></div>' +
@@ -1197,7 +1307,7 @@
       loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
       closeAuth();
       setAuthUI(true);
-      toast("授权成功 · 已加载气泡图（演示）");
+      toast("授权成功 · 已加载肥皂泡（演示）");
     }
 
     function logout() {
@@ -1212,12 +1322,12 @@
       const top3 = byScore.slice(0, 3);
       document.getElementById("share-preview").innerHTML =
         '<div class="hook">你回了 <span class="hi">' + countIReplied + '</span> 人，只有 <span class="lo">' + countRepliedMe + '</span> 人回你</div>' +
-        '<div class="sub">气泡图一览 · 没回我的 ' + countNoReply + ' 人 · 非 X 官方演示</div>' +
+        '<div class="sub">肥皂泡一览 · 没回我的 ' + countNoReply + ' 人 · 非 X 官方演示</div>' +
         '<div class="top3">' + top3.map((u, i) =>
           '<div class="row"><span>' + (i + 1) + '. ' + u.name + ' · ' + u.tag.label + '</span><b>' + u.score + '</b></div>'
         ).join("") + '</div>';
       document.getElementById("copy-preview").value =
-        "我的互动气泡图：回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回我。\n" +
+        "我的互动肥皂泡：回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回我。\n" +
         "Top：" + top3.map(u => u.name + "(" + u.score + ")").join(" / ") + "\n#互动分析\n" + SHARE_URL;
       document.getElementById("share-modal").classList.add("open");
     }
