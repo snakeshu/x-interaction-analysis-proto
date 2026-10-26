@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>互动分析 · 原型 v6 · 气泡图</title>
+  <style>
+    :root {
+      --coral: #F18D8D;
+      --sky: #4DBBEB;
+      --orange: #F7941D;
+      --magenta: #E91E63;
+      --yellow: #FFD500;
+      --bg: #FFF8F0;
+      --bg-elev: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-hover: #FFF1E6;
+      --border: #F0D9C8;
+      --text: #1F1520;
+      --text-muted: #6B5A62;
+      --text-dim: #9A8790;
+      --tag-super: #C2410C;
+      --tag-super-bg: rgba(247, 148, 29, 0.22);
+      --tag-fan: #0369A1;
+      --tag-fan-bg: rgba(77, 187, 235, 0.22);
+      --tag-passer: #6B5A62;
+      --tag-passer-bg: rgba(107, 90, 98, 0.12);
+      --accent: var(--sky);
+      --accent-2: var(--magenta);
+      --warn: #B45309;
+      --radius: 14px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --shadow: 0 8px 24px rgba(233, 30, 99, 0.08), 0 2px 8px rgba(31, 21, 32, 0.06);
+      --header-h: auto;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      font-size: 14px;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          var(--coral) 0px, var(--coral) 28px,
+          var(--sky) 28px, var(--sky) 56px,
+          var(--orange) 56px, var(--orange) 84px,
+          var(--magenta) 84px, var(--magenta) 112px,
+          var(--yellow) 112px, var(--yellow) 140px
+        );
+      opacity: 0.14;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 45%, transparent 80%);
+      -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1) 45%, transparent 80%);
+    }
+    .paper-strip {
+      height: 10px;
+      width: 100%;
+      flex-shrink: 0;
+      background:
+        radial-gradient(circle at 10px 0, transparent 9px, var(--coral) 9.5px) 0 0 / 20px 10px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--sky) 9.5px) 20px 0 / 20px 10px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--orange) 9.5px) 40px 0 / 20px 10px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--magenta) 9.5px) 60px 0 / 20px 10px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--yellow) 9.5px) 80px 0 / 20px 10px;
+      background-color: var(--coral);
+    }
+    .banner {
+      flex-shrink: 0;
+      background: linear-gradient(90deg, rgba(241,141,141,0.35), rgba(77,187,235,0.3), rgba(255,213,0,0.35));
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 5px 12px;
+      text-align: center;
+    }
+    .banner strong { color: var(--magenta); font-weight: 700; }
+
+    .app-shell {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100dvh;
+    }
+    body.logged-in .app-shell { display: flex; }
+    body.logged-out .login-hero { display: flex; }
+    body.logged-in .login-hero { display: none !important; }
+
+    .login-hero {
+      display: none;
+      min-height: calc(100dvh - 40px);
+      padding: 32px 20px 48px;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+    .login-card {
+      width: min(440px, 100%);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 10px;
+      background: linear-gradient(90deg, var(--coral), var(--sky), var(--orange), var(--magenta), var(--yellow));
+    }
+    .login-card .scallops {
+      display: flex;
+      justify-content: center;
+      margin: 8px 0 18px;
+      height: 22px;
+    }
+    .login-card .scallops span {
+      width: 36px; height: 22px;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.06);
+    }
+    .login-card h1 {
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .login-card .lead {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+    .login-card .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 650;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(77,187,235,0.18);
+      color: #0369A1;
+    }
+    .badge.warn {
+      background: rgba(255,213,0,0.28);
+      color: #92400E;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--bg-hover); }
+    .btn.primary {
+      background: linear-gradient(135deg, var(--magenta), var(--orange));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(233, 30, 99, 0.28);
+    }
+    .btn.primary:hover { filter: brightness(1.06); }
+    .btn.ghost { background: transparent; }
+    .btn.x-login {
+      background: #000;
+      border-color: #000;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 15px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+    .btn.x-login:hover { filter: brightness(1.1); background: #111; }
+    .btn.x-login svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn.chip {
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 12px;
+      background: var(--bg);
+    }
+    .btn.chip.active {
+      background: linear-gradient(135deg, rgba(233,30,99,0.14), rgba(77,187,235,0.16));
+      border-color: rgba(233,30,99,0.35);
+      color: var(--text);
+      box-shadow: 0 0 0 1px rgba(233,30,99,0.2);
+    }
+
+    .topbar {
+      flex-shrink: 0;
+      background: var(--bg-elev);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 30;
+    }
+    .topbar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .topbar-row.menu {
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+      margin-right: 4px;
+    }
+    .brand-mark {
+      width: 24px; height: 24px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--magenta), var(--orange), var(--yellow));
+      display: grid; place-items: center;
+      font-size: 11px; font-weight: 700; color: #fff;
+    }
+    .brand-sub {
+      display: block;
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-top: 0;
+      letter-spacing: 0;
+    }
+    .filters {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
+    }
+    .axis-hint {
+      font-size: 10px;
+      color: var(--text-dim);
+      padding: 0 2px;
+      line-height: 1.3;
+    }
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px 3px 3px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 650;
+    }
+    .user-chip .av {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      color: #fff; font-size: 10px; font-weight: 700;
+      background: linear-gradient(135deg, var(--sky), var(--magenta));
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(77, 187, 235, 0.2);
+      color: #0369A1;
+      border: 1px solid rgba(77, 187, 235, 0.45);
+    }
+    .account-select {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      padding: 5px 24px 5px 8px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      max-width: 140px;
+      background-image: linear-gradient(45deg, transparent 50%, #6B5A62 50%), linear-gradient(135deg, #6B5A62 50%, transparent 50%);
+      background-position: calc(100% - 10px) calc(50% - 2px), calc(100% - 5px) calc(50% - 2px);
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .stage {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 0 0;
+    }
+    .canvas-frame {
+      flex: 1;
+      min-height: 0;
+      margin: 8px 10px;
+      position: relative;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      touch-action: none;
+    }
+    .canvas-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(233,30,99,0.06) 0%, transparent 28%, transparent 72%, rgba(77,187,235,0.07) 100%);
+      z-index: 0;
+    }
+    .y-labels {
+      position: absolute;
+      left: 6px;
+      top: 8px;
+      bottom: 8px;
+      width: 18px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      letter-spacing: 0.08em;
+    }
+    .y-labels .hi { color: var(--orange); }
+    .y-labels .lo { color: var(--sky); }
+    .lane-guides {
+      position: absolute;
+      inset: 0 0 0 28px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .lane-guides i {
+      position: absolute;
+      left: 8px; right: 12px;
+      height: 0;
+      border-top: 1px dashed rgba(240, 217, 200, 0.9);
+    }
+    .lane-guides i:nth-child(1) { top: 18%; }
+    .lane-guides i:nth-child(2) { top: 50%; }
+    .lane-guides i:nth-child(3) { top: 82%; }
+    .bubble-layer {
+      position: absolute;
+      inset: 0 0 0 26px;
+      z-index: 3;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 6px 16px rgba(31,21,32,0.16), 0 0 0 2px rgba(255,255,255,0.65);
+      transition: box-shadow .15s, transform .12s;
+      touch-action: none;
+      will-change: left, top;
+    }
+    .bubble:active, .bubble.dragging {
+      cursor: grabbing;
+      z-index: 20 !important;
+      box-shadow: 0 12px 28px rgba(233,30,99,0.28), 0 0 0 3px #fff;
+      transform: scale(1.06);
+    }
+    .bubble.selected {
+      z-index: 15;
+      box-shadow: 0 10px 24px rgba(233,30,99,0.32), 0 0 0 3px var(--yellow);
+    }
+    .bubble.dim {
+      opacity: 0.28;
+      filter: grayscale(0.35);
+    }
+    .bubble .b-init {
+      font-size: inherit;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .bubble .b-handle {
+      font-size: 9px;
+      font-weight: 650;
+      opacity: 0.95;
+      margin-top: 2px;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .bubble.small .b-handle { display: none; }
+    .bubble-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      pointer-events: none;
+    }
+    .bubble.tag-super .bubble-ring { border-color: var(--orange); }
+    .bubble.tag-fan .bubble-ring { border-color: var(--sky); }
+    .bubble.tag-passer .bubble-ring { border-color: rgba(107,90,98,0.55); }
+
+    .legend {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      z-index: 4;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+    .legend span {
+      font-size: 10px;
+      font-weight: 650;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid var(--border);
+    }
+    .legend .super { color: var(--tag-super); }
+    .legend .fan { color: var(--tag-fan); }
+    .legend .passer { color: var(--tag-passer); }
+
+    .detail-sheet {
+      flex-shrink: 0;
+      max-height: 0;
+      overflow: hidden;
+      background: var(--bg-elev);
+      border-top: 1px solid transparent;
+      transition: max-height .22s ease, border-color .15s;
+    }
+    .detail-sheet.open {
+      max-height: 210px;
+      border-top-color: var(--border);
+    }
+    .detail-inner {
+      padding: 10px 14px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: start;
+    }
+    .detail-av {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      color: #fff; font-weight: 700; font-size: 16px;
+    }
+    .detail-name { font-weight: 700; font-size: 15px; }
+    .detail-handle { color: var(--text-muted); font-size: 12px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+    .tag.super { color: var(--tag-super); background: var(--tag-super-bg); }
+    .tag.fan { color: var(--tag-fan); background: var(--tag-fan-bg); }
+    .tag.passer { color: var(--tag-passer); background: var(--tag-passer-bg); }
+    .detail-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      grid-column: 1 / -1;
+    }
+    .metric {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .metric b { color: var(--text); font-variant-numeric: tabular-nums; }
+    .detail-preview {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      max-height: 2.9em;
+      overflow: hidden;
+    }
+    .detail-close {
+      appearance: none;
+      border: none;
+      background: var(--bg-hover);
+      color: var(--text-muted);
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: min(400px, 100%);
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 650; }
+    .modal .close {
+      margin-left: auto;
+      appearance: none;
+      border: none;
+      background: var(--bg-hover);
+      color: var(--text-muted);
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .auth-perms {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0 18px;
+    }
+    .auth-perm {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+      font-size: 13px;
+    }
+    .auth-perm .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      margin-top: 5px; flex-shrink: 0;
+      background: var(--sky);
+    }
+    .auth-perm:nth-child(2) .dot { background: var(--magenta); }
+    .auth-perm:nth-child(3) .dot { background: var(--orange); }
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .share-preview {
+      background: linear-gradient(160deg, #fff 0%, #FFF5F7 50%, #FFF8E7 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .share-preview .hook {
+      font-size: 18px;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .share-preview .hook .hi { color: var(--orange); }
+    .share-preview .hook .lo { color: var(--magenta); }
+    .share-preview .sub { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+    .share-preview .top3 {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .share-preview .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .copy-ta {
+      width: 100%;
+      min-height: 88px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.55;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 10px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1F1520;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 200;
+      opacity: 0;
+      transition: transform .25s, opacity .25s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body class="logged-out">
+  <div class="app-shell" id="app-shell">
+    <div class="paper-strip" aria-hidden="true"></div>
+    <div class="banner">
+      <strong>原型 v6</strong> — 气泡图一屏 · X 授权演示 · <strong>非 X 官方</strong>
+    </div>
+
+    <header class="topbar">
+      <div class="topbar-row menu">
+        <div class="brand">
+          <div class="brand-mark">互</div>
+          <div>
+            <span>互动分析</span>
+            <span class="brand-sub">非 X 官方 · 气泡图</span>
+          </div>
+        </div>
+        <div class="filters" id="filters" role="group" aria-label="标签筛选">
+          <button type="button" class="btn chip active" data-filter="all">全部</button>
+          <button type="button" class="btn chip" data-filter="super">铁粉</button>
+          <button type="button" class="btn chip" data-filter="fan">粉丝</button>
+          <button type="button" class="btn chip" data-filter="passer">路人</button>
+        </div>
+      </div>
+      <div class="topbar-row menu">
+        <div class="axis-hint">上 = 高回复（高分）· 下 = 低回复 · 拖动气泡 · 点选看详情 · 一屏全显示</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
+          <select class="account-select" id="account-select" aria-label="切换已授权账号"></select>
+          <div class="user-chip" id="user-chip">
+            <span class="av" id="user-av">Y</span>
+            <span id="user-handle">@you</span>
+          </div>
+          <span class="status-pill">演示</span>
+          <button type="button" class="btn primary" id="btn-share">分享</button>
+          <button type="button" class="btn ghost" id="btn-logout">退出</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="stage">
+      <div class="canvas-frame" id="canvas-frame">
+        <div class="y-labels" aria-hidden="true">
+          <span class="hi">高回复</span>
+          <span class="lo">低回复</span>
+        </div>
+        <div class="lane-guides" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="bubble-layer" id="bubble-layer"></div>
+        <div class="legend">
+          <span class="super">● 铁粉</span>
+          <span class="fan">● 粉丝</span>
+          <span class="passer">● 路人</span>
+        </div>
+      </div>
+
+      <div class="detail-sheet" id="detail-sheet">
+        <div class="detail-inner">
+          <div class="detail-av" id="d-av"></div>
+          <div>
+            <div class="detail-name" id="d-name"></div>
+            <div class="detail-handle" id="d-handle"></div>
+            <div id="d-tag"></div>
+          </div>
+          <button type="button" class="detail-close" id="d-close" aria-label="关闭">×</button>
+          <div class="detail-metrics" id="d-metrics"></div>
+          <div class="detail-preview" id="d-preview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-hero" id="login-hero">
+    <div style="position:absolute;top:0;left:0;right:0">
+      <div class="paper-strip" aria-hidden="true"></div>
+      <div class="banner"><strong>原型 v6</strong> — 气泡图 · X 授权演示 · <strong>非 X 官方</strong></div>
+    </div>
+    <div class="login-card">
+      <div class="scallops" aria-hidden="true">
+        <span style="background:var(--coral)"></span>
+        <span style="background:var(--sky)"></span>
+        <span style="background:var(--orange)"></span>
+        <span style="background:var(--magenta)"></span>
+        <span style="background:var(--yellow)"></span>
+      </div>
+      <h1>互动分析</h1>
+      <p class="lead">用 X 授权登录后，在一屏气泡图里看谁常回你。<br/>高回复在上、低回复在下，气泡可拖动。</p>
+      <div class="badge-row">
+        <span class="badge">演示授权</span>
+        <span class="badge warn">非 X 官方</span>
+        <span class="badge">气泡图 v6</span>
+      </div>
+      <button type="button" class="btn x-login" id="btn-login">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.849L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        使用 X 授权登录
+      </button>
+      <p class="note">授权后加载本机示例互动数据。不上传、不写帖、不读私信。真 API 以后再说。</p>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="auth-modal" role="dialog" aria-modal="true" aria-label="X 授权登录">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3>授权「互动分析」</h3>
+          <div class="detail-handle" style="margin-top:4px">演示授权 · 不真连 X API · 非 X 官方</div>
+        </div>
+        <button type="button" class="close" id="auth-close" aria-label="关闭">×</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.55">将请求以下<strong>只读</strong>权限示意（不会发帖、不读私信）：</p>
+      <div class="auth-perms">
+        <div class="auth-perm"><span class="dot"></span><div>读取你的公开资料与 @handle</div></div>
+        <div class="auth-perm"><span class="dot"></span><div>读取与你相关的回复 / 互动记录</div></div>
+        <div class="auth-perm"><span class="dot"></span><div>用于生成本地气泡图与分享卡</div></div>
+      </div>
+      <div class="auth-actions">
+        <button type="button" class="btn ghost" id="auth-cancel">取消</button>
+        <button type="button" class="btn x-login" id="auth-confirm" style="padding:10px 16px;font-size:14px">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.849L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          授权并继续
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="share-modal" role="dialog" aria-modal="true" aria-label="分享卡">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>分享卡（简化）</h3>
+        <button type="button" class="close" id="share-close" aria-label="关闭">×</button>
+      </div>
+      <div class="share-preview" id="share-preview"></div>
+      <textarea class="copy-ta" id="copy-preview" rows="4"></textarea>
+      <div class="auth-actions">
+        <button type="button" class="btn" id="btn-copy-text">复制发帖文案</button>
+        <button type="button" class="btn primary" id="btn-share-done">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const LS_ACCOUNT = "xia_v6_account";
+    const SS_AUTH = "xia_v6_authed";
+    const SHARE_URL = "https://snakeshu.github.io/x-interaction-analysis-proto/";
+
+    let activeAccountId = "me";
+    let isAuthed = false;
+    let users = [];
+    let totalScore = 0, avgScore = 0;
+    let countRepliedMe = 0, countIReplied = 0, countNoReply = 0;
+    let byScore = [];
+    let filterKey = "all";
+    let selectedId = null;
+    let positions = {}; // id -> {x,y,r} center coords in bubble-layer
+    let drag = null; // {id, ox, oy, sx, sy, moved}
+
+    const ACCOUNTS = {
+      me: {
+        id: "me",
+        label: "@you · 主账号", handle: "you", displayName: "You",
+        raw: [
+          { id:"u1", name:"林晓舟", handle:"linxz", color:"#e11d48", theyReplies:9, iReplies:5,
+            theirPreview:"这个观点很有意思，展开聊聊？", myPreview:"感谢反馈，下一篇会写更细。",
+            lastTheirAt:"2026-10-23 21:14", waitHours:0 },
+          { id:"u2", name:"阿可", handle:"ake_dev", color:"#8b5cf6", theyReplies:4, iReplies:3,
+            theirPreview:"同款踩坑，已收藏。", myPreview:"你那边的部署脚本能开源一份吗？",
+            lastTheirAt:"2026-10-22 11:02", waitHours:0 },
+          { id:"u3", name:"北辰", handle:"beichen_ai", color:"#06b6d4", theyReplies:2, iReplies:6,
+            theirPreview:"同意，评测口径要统一。", myPreview:"你们 benchmark 用的是哪套集？",
+            lastTheirAt:"2026-10-20 09:30", waitHours:0 },
+          { id:"u4", name:"小满", handle:"xiaoman", color:"#f59e0b", theyReplies:0, iReplies:4,
+            theirPreview:"", myPreview:"新封面好好看，求工具栈～",
+            lastTheirAt:"", waitHours:120 },
+          { id:"u5", name:"青禾", handle:"qinghe", color:"#10b981", theyReplies:3, iReplies:1,
+            theirPreview:"早啊，今天也冲。", myPreview:"早安！",
+            lastTheirAt:"2026-10-24 07:55", waitHours:0 },
+          { id:"u6", name:"周予", handle:"zhouyu_pm", color:"#3b82f6", theyReplies:1, iReplies:2,
+            theirPreview:"需求文档链接发我一下。", myPreview:"原型已经放进仓库了。",
+            lastTheirAt:"2026-10-19 16:40", waitHours:0 },
+          { id:"u7", name:"匿名观察者", handle:"observer99", color:"#64748b", theyReplies:1, iReplies:0,
+            theirPreview:"路过点个赞。", myPreview:"",
+            lastTheirAt:"2026-10-18 13:20", waitHours:0 },
+          { id:"u8", name:"南风", handle:"nanfeng", color:"#ec4899", theyReplies:0, iReplies:3,
+            theirPreview:"", myPreview:"这篇写太好了，转发给团队了。",
+            lastTheirAt:"", waitHours:72 },
+          { id:"u9", name:"沐白", handle:"mubai_ux", color:"#a855f7", theyReplies:5, iReplies:4,
+            theirPreview:"交互稿第二版看过了，赞。", myPreview:"那一屏密度要不要再降一点？",
+            lastTheirAt:"2026-10-23 18:05", waitHours:0 },
+          { id:"u10", name:"老K", handle:"oldk", color:"#84cc16", theyReplies:0, iReplies:2,
+            theirPreview:"", myPreview:"求推荐一本产品方法论。",
+            lastTheirAt:"", waitHours:240 },
+          { id:"u11", name:"四月", handle:"siyue", color:"#f43f5e", theyReplies:2, iReplies:0,
+            theirPreview:"哈哈哈笑死。", myPreview:"",
+            lastTheirAt:"2026-10-21 22:11", waitHours:0 },
+          { id:"u12", name:"言蹊", handle:"yanxi", color:"#14b8a6", theyReplies:0, iReplies:1,
+            theirPreview:"", myPreview:"欢迎来串门～",
+            lastTheirAt:"", waitHours:36 }
+        ]
+      },
+      alt: {
+        id: "alt",
+        label: "@brand · 品牌号", handle: "brand", displayName: "Brand",
+        raw: [
+          { id:"a1", name:"产品君", handle:"pm_jun", color:"#0ea5e9", theyReplies:7, iReplies:4,
+            theirPreview:"路线图可以公开吗？", myPreview:"Q4 会发一版。",
+            lastTheirAt:"2026-10-23 12:00", waitHours:0 },
+          { id:"a2", name:"增长小分队", handle:"growth_x", color:"#22c55e", theyReplies:3, iReplies:5,
+            theirPreview:"转化漏斗想对一下。", myPreview:"数据看板已共享。",
+            lastTheirAt:"2026-10-22 15:40", waitHours:0 },
+          { id:"a3", name:"媒体观察", handle:"media_watch", color:"#a78bfa", theyReplies:0, iReplies:3,
+            theirPreview:"", myPreview:"报道提到我们了，感谢！",
+            lastTheirAt:"", waitHours:96 },
+          { id:"a4", name:"社区志愿者", handle:"vol_cn", color:"#f472b6", theyReplies:5, iReplies:2,
+            theirPreview:"活动报名表填好了。", myPreview:"太感谢了！",
+            lastTheirAt:"2026-10-24 09:10", waitHours:0 },
+          { id:"a5", name:"竞品雷达", handle:"radar88", color:"#94a3b8", theyReplies:1, iReplies:0,
+            theirPreview:"有意思的切入点。", myPreview:"",
+            lastTheirAt:"2026-10-20 18:22", waitHours:0 },
+          { id:"a6", name:"沉默客户", handle:"quiet_c", color:"#78716c", theyReplies:0, iReplies:2,
+            theirPreview:"", myPreview:"想听听你们的使用体验～",
+            lastTheirAt:"", waitHours:180 }
+        ]
+      }
+    };
+
+    function computeScore(u) {
+      const fromThem = u.theyReplies * 2;
+      const fromMe = u.iReplies * 1;
+      const mutual = (u.theyReplies > 0 && u.iReplies > 0) ? 1 : 0;
+      return { fromThem, fromMe, mutual, score: fromThem + fromMe + mutual };
+    }
+
+    function loadAccount(id) {
+      activeAccountId = id;
+      localStorage.setItem(LS_ACCOUNT, id);
+      const acc = ACCOUNTS[id] || ACCOUNTS.me;
+      const scored = acc.raw.map(u => Object.assign({}, u, computeScore(u)));
+      totalScore = scored.reduce((a, u) => a + u.score, 0);
+      avgScore = scored.length ? totalScore / scored.length : 0;
+      function tagFor(score) {
+        if (score >= avgScore * 3 && score >= 5) return { key: "super", label: "铁粉" };
+        if (score >= avgScore && score >= 2) return { key: "fan", label: "粉丝" };
+        return { key: "passer", label: "路人" };
+      }
+      users = scored.map(u => {
+        const volume = u.theyReplies + u.iReplies;
+        return Object.assign({}, u, {
+          tag: tagFor(u.score),
+          bidirectional: u.theyReplies > 0 && u.iReplies > 0,
+          volume: volume
+        });
+      });
+      countRepliedMe = users.filter(u => u.theyReplies > 0).length;
+      countIReplied = users.filter(u => u.iReplies > 0).length;
+      countNoReply = users.filter(u => u.iReplies > 0 && u.theyReplies === 0).length;
+      byScore = users.slice().sort((a, b) => b.score - a.score);
+      positions = {};
+      selectedId = null;
+      closeDetail();
+    }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => t.classList.remove("show"), 1800);
+    }
+
+    function syncUserChip() {
+      const acc = ACCOUNTS[activeAccountId] || ACCOUNTS.me;
+      document.getElementById("user-handle").textContent = "@" + (acc.handle || "you");
+      document.getElementById("user-av").textContent = (acc.displayName || "Y").slice(0, 1);
+      const sel = document.getElementById("account-select");
+      sel.innerHTML = Object.values(ACCOUNTS).map(a =>
+        '<option value="' + a.id + '"' + (a.id === activeAccountId ? " selected" : "") + '>' + a.label + '</option>'
+      ).join("");
+    }
+
+    function layerSize() {
+      const layer = document.getElementById("bubble-layer");
+      return { w: layer.clientWidth, h: layer.clientHeight };
+    }
+
+    function radiusFor(u, minR, maxR, maxVol) {
+      const t = maxVol ? u.volume / maxVol : 0.5;
+      return minR + Math.sqrt(Math.max(t, 0.08)) * (maxR - minR);
+    }
+
+    function layoutBubbles(keepManual) {
+      const { w, h } = layerSize();
+      if (w < 40 || h < 40) return;
+      const maxVol = Math.max.apply(null, users.map(u => u.volume).concat([1]));
+      const maxScore = Math.max.apply(null, users.map(u => u.score).concat([1]));
+      const minScore = Math.min.apply(null, users.map(u => u.score).concat([0]));
+      const range = Math.max(maxScore - minScore, 1);
+      const minR = Math.max(18, Math.min(26, Math.floor(Math.min(w, h) / 18)));
+      const maxR = Math.max(minR + 8, Math.min(46, Math.floor(Math.min(w, h) / 8)));
+      const pad = 4;
+
+      const nodes = users.map((u, i) => {
+        const r = radiusFor(u, minR, maxR, maxVol);
+        let yNorm = (u.score - minScore) / range; // 1 = high
+        // high score -> top (small y)
+        let cy = pad + r + (1 - yNorm) * (h - 2 * pad - 2 * r);
+        // x: stagger by rank among similar scores
+        const golden = 0.6180339887;
+        let cx = pad + r + ((i * golden) % 1) * (w - 2 * pad - 2 * r);
+        if (keepManual && positions[u.id] && positions[u.id].manual) {
+          cx = positions[u.id].x;
+          cy = positions[u.id].y;
+        }
+        return { id: u.id, u: u, r: r, x: cx, y: cy, manual: !!(keepManual && positions[u.id] && positions[u.id].manual) };
+      });
+
+      // collision resolve (skip pure manual pairs lightly still clamp)
+      for (let iter = 0; iter < 40; iter++) {
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            let dx = b.x - a.x, dy = b.y - a.y;
+            let dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+            const minDist = a.r + b.r + 4;
+            if (dist < minDist) {
+              const push = (minDist - dist) / 2;
+              dx /= dist; dy /= dist;
+              if (!a.manual) { a.x -= dx * push; a.y -= dy * push * 0.35; }
+              if (!b.manual) { b.x += dx * push; b.y += dy * push * 0.35; }
+            }
+          }
+        }
+        for (let i = 0; i < nodes.length; i++) {
+          const n = nodes[i];
+          if (n.manual) {
+            n.x = Math.min(w - n.r - pad, Math.max(n.r + pad, n.x));
+            n.y = Math.min(h - n.r - pad, Math.max(n.r + pad, n.y));
+            continue;
+          }
+          // soft pull y back toward score lane
+          const yNorm = (n.u.score - minScore) / range;
+          const targetY = pad + n.r + (1 - yNorm) * (h - 2 * pad - 2 * n.r);
+          n.y += (targetY - n.y) * 0.08;
+          n.x = Math.min(w - n.r - pad, Math.max(n.r + pad, n.x));
+          n.y = Math.min(h - n.r - pad, Math.max(n.r + pad, n.y));
+        }
+      }
+
+      nodes.forEach(n => {
+        positions[n.id] = { x: n.x, y: n.y, r: n.r, manual: n.manual };
+      });
+      paintBubbles();
+    }
+
+    function paintBubbles() {
+      const layer = document.getElementById("bubble-layer");
+      const maxVol = Math.max.apply(null, users.map(u => u.volume).concat([1]));
+      layer.innerHTML = users.map(u => {
+        const p = positions[u.id];
+        if (!p) return "";
+        const dim = filterKey !== "all" && u.tag.key !== filterKey;
+        const selected = selectedId === u.id;
+        const fontSize = Math.max(11, Math.floor(p.r * 0.42));
+        const showHandle = p.r >= 28;
+        const cls = [
+          "bubble",
+          "tag-" + u.tag.key,
+          showHandle ? "" : "small",
+          dim ? "dim" : "",
+          selected ? "selected" : ""
+        ].filter(Boolean).join(" ");
+        const left = (p.x - p.r).toFixed(1);
+        const top = (p.y - p.r).toFixed(1);
+        const size = (p.r * 2).toFixed(1);
+        return '<div class="' + cls + '" data-id="' + u.id + '" style="left:' + left + 'px;top:' + top +
+          'px;width:' + size + 'px;height:' + size + 'px;background:' + u.color +
+          ';font-size:' + fontSize + 'px;z-index:' + (10 + Math.round(u.score)) +
+          '" title="@' + u.handle + ' · ' + u.tag.label + ' · 分 ' + u.score + '">' +
+          '<div class="bubble-ring"></div>' +
+          '<span class="b-init">' + u.name.slice(0, 1) + '</span>' +
+          (showHandle ? '<span class="b-handle">@' + u.handle + '</span>' : '') +
+          '</div>';
+      }).join("");
+    }
+
+    function applyFilterDim() {
+      paintBubbles();
+    }
+
+    function fillDetail(u) {
+      document.getElementById("d-av").style.background = u.color;
+      document.getElementById("d-av").textContent = u.name.slice(0, 1);
+      document.getElementById("d-name").textContent = u.name;
+      document.getElementById("d-handle").textContent = "@" + u.handle;
+      document.getElementById("d-tag").innerHTML = '<span class="tag ' + u.tag.key + '">' + u.tag.label + '</span>';
+      document.getElementById("d-metrics").innerHTML =
+        '<div class="metric">对方回我 <b>' + u.theyReplies + '</b> ×2 → +' + u.fromThem + '</div>' +
+        '<div class="metric">我回对方 <b>' + u.iReplies + '</b> ×1 → +' + u.fromMe + '</div>' +
+        '<div class="metric">双向 <b>' + (u.bidirectional ? "+1" : "0") + '</b></div>' +
+        '<div class="metric">互动分 <b>' + u.score + '</b></div>';
+      const parts = [];
+      if (u.theirPreview) parts.push("对方：「" + u.theirPreview + "」");
+      if (u.myPreview) parts.push("我：「" + u.myPreview + "」");
+      document.getElementById("d-preview").textContent = parts.join(" · ") || "暂无预览";
+    }
+
+    function markSelectedClass() {
+      document.querySelectorAll(".bubble").forEach(el => {
+        el.classList.toggle("selected", el.getAttribute("data-id") === selectedId);
+      });
+    }
+
+    function openDetail(id, opts) {
+      const u = users.find(x => x.id === id);
+      if (!u) return;
+      const wasOpen = document.getElementById("detail-sheet").classList.contains("open");
+      selectedId = id;
+      fillDetail(u);
+      document.getElementById("detail-sheet").classList.add("open");
+      markSelectedClass();
+      // Avoid rebuilding DOM mid-drag; only reflow when sheet first opens
+      if (!opts || !opts.skipLayout) {
+        if (!wasOpen) requestAnimationFrame(() => layoutBubbles(true));
+      }
+    }
+
+    function closeDetail() {
+      selectedId = null;
+      document.getElementById("detail-sheet").classList.remove("open");
+      markSelectedClass();
+      requestAnimationFrame(() => layoutBubbles(true));
+    }
+
+    function pointerPos(e, el) {
+      const t = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+      const rect = el.getBoundingClientRect();
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+
+    function onPointerDown(e) {
+      const bubble = e.target.closest(".bubble");
+      if (!bubble) return;
+      e.preventDefault();
+      const id = bubble.getAttribute("data-id");
+      const p = positions[id];
+      if (!p) return;
+      const layer = document.getElementById("bubble-layer");
+      const pt = pointerPos(e, layer);
+      drag = { id: id, ox: pt.x - p.x, oy: pt.y - p.y, sx: pt.x, sy: pt.y, moved: false };
+      bubble.classList.add("dragging");
+      openDetail(id, { skipLayout: true });
+    }
+
+    function onPointerMove(e) {
+      if (!drag) return;
+      e.preventDefault();
+      const layer = document.getElementById("bubble-layer");
+      const { w, h } = layerSize();
+      const pt = pointerPos(e, layer);
+      if (Math.abs(pt.x - drag.sx) + Math.abs(pt.y - drag.sy) > 4) drag.moved = true;
+      const p = positions[drag.id];
+      if (!p) return;
+      let nx = pt.x - drag.ox;
+      let ny = pt.y - drag.oy;
+      nx = Math.min(w - p.r - 2, Math.max(p.r + 2, nx));
+      ny = Math.min(h - p.r - 2, Math.max(p.r + 2, ny));
+      p.x = nx;
+      p.y = ny;
+      p.manual = true;
+      const el = layer.querySelector('[data-id="' + drag.id + '"]');
+      if (el) {
+        el.style.left = (nx - p.r) + "px";
+        el.style.top = (ny - p.r) + "px";
+      }
+    }
+
+    function onPointerUp(e) {
+      if (!drag) return;
+      const layer = document.getElementById("bubble-layer");
+      const el = layer.querySelector('[data-id="' + drag.id + '"]');
+      if (el) el.classList.remove("dragging");
+      // free position — no snap back (documented in README)
+      const id = drag.id;
+      drag = null;
+      // clamp into possibly shrunken canvas after detail sheet opens; keep manual x/y
+      requestAnimationFrame(() => {
+        openDetail(id, { skipLayout: true });
+        layoutBubbles(true);
+      });
+    }
+
+    function rebuildCanvas() {
+      layoutBubbles(false);
+    }
+
+    function setAuthUI(authed) {
+      isAuthed = !!authed;
+      document.body.classList.toggle("logged-in", isAuthed);
+      document.body.classList.toggle("logged-out", !isAuthed);
+      if (isAuthed) {
+        syncUserChip();
+        requestAnimationFrame(() => rebuildCanvas());
+      }
+    }
+
+    function openAuth() { document.getElementById("auth-modal").classList.add("open"); }
+    function closeAuth() { document.getElementById("auth-modal").classList.remove("open"); }
+
+    function completeLogin() {
+      sessionStorage.setItem(SS_AUTH, "1");
+      const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
+      loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+      closeAuth();
+      setAuthUI(true);
+      toast("授权成功 · 已加载气泡图（演示）");
+    }
+
+    function logout() {
+      sessionStorage.removeItem(SS_AUTH);
+      closeShare();
+      closeDetail();
+      setAuthUI(false);
+      toast("已退出");
+    }
+
+    function openShare() {
+      const top3 = byScore.slice(0, 3);
+      document.getElementById("share-preview").innerHTML =
+        '<div class="hook">你回了 <span class="hi">' + countIReplied + '</span> 人，只有 <span class="lo">' + countRepliedMe + '</span> 人回你</div>' +
+        '<div class="sub">气泡图一览 · 没回我的 ' + countNoReply + ' 人 · 非 X 官方演示</div>' +
+        '<div class="top3">' + top3.map((u, i) =>
+          '<div class="row"><span>' + (i + 1) + '. ' + u.name + ' · ' + u.tag.label + '</span><b>' + u.score + '</b></div>'
+        ).join("") + '</div>';
+      document.getElementById("copy-preview").value =
+        "我的互动气泡图：回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回我。\n" +
+        "Top：" + top3.map(u => u.name + "(" + u.score + ")").join(" / ") + "\n#互动分析\n" + SHARE_URL;
+      document.getElementById("share-modal").classList.add("open");
+    }
+    function closeShare() { document.getElementById("share-modal").classList.remove("open"); }
+
+    // events
+    document.getElementById("btn-login").addEventListener("click", openAuth);
+    document.getElementById("auth-close").addEventListener("click", closeAuth);
+    document.getElementById("auth-cancel").addEventListener("click", closeAuth);
+    document.getElementById("auth-modal").addEventListener("click", e => { if (e.target.id === "auth-modal") closeAuth(); });
+    document.getElementById("auth-confirm").addEventListener("click", completeLogin);
+    document.getElementById("btn-logout").addEventListener("click", logout);
+    document.getElementById("btn-share").addEventListener("click", openShare);
+    document.getElementById("share-close").addEventListener("click", closeShare);
+    document.getElementById("btn-share-done").addEventListener("click", closeShare);
+    document.getElementById("share-modal").addEventListener("click", e => { if (e.target.id === "share-modal") closeShare(); });
+    document.getElementById("d-close").addEventListener("click", closeDetail);
+    document.getElementById("btn-copy-text").addEventListener("click", async () => {
+      const text = document.getElementById("copy-preview").value;
+      try { await navigator.clipboard.writeText(text); toast("文案已复制"); }
+      catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); ta.remove(); toast("文案已复制");
+      }
+    });
+    document.getElementById("account-select").addEventListener("change", e => {
+      loadAccount(e.target.value);
+      syncUserChip();
+      rebuildCanvas();
+      toast("已切换账号（演示）");
+    });
+    document.getElementById("filters").addEventListener("click", e => {
+      const btn = e.target.closest("[data-filter]");
+      if (!btn) return;
+      filterKey = btn.getAttribute("data-filter");
+      document.querySelectorAll("#filters .chip").forEach(b => b.classList.toggle("active", b === btn));
+      applyFilterDim();
+    });
+
+    const layer = document.getElementById("bubble-layer");
+    layer.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    // touch fallback
+    layer.addEventListener("touchstart", onPointerDown, { passive: false });
+    window.addEventListener("touchmove", onPointerMove, { passive: false });
+    window.addEventListener("touchend", onPointerUp);
+    window.addEventListener("touchcancel", onPointerUp);
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeDetail(); closeShare(); closeAuth(); }
+    });
+
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (isAuthed) layoutBubbles(true);
+      }, 120);
+    });
+
+    // boot
+    if (sessionStorage.getItem(SS_AUTH) === "1") {
+      const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
+      loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+      setAuthUI(true);
+    } else {
+      setAuthUI(false);
+    }
+  </script>
+</body>
+</html>
