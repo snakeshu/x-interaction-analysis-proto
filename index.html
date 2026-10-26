@@ -3,34 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>互动分析</title>
+  <title>互动分析 · 原型 v5</title>
   <style>
 
     :root {
-      --bg: #0a0a0b;
-      --bg-elev: #141416;
-      --bg-card: #1a1a1e;
-      --bg-hover: #222228;
-      --border: #2a2a30;
-      --text: #f0f0f2;
-      --text-muted: #8b8b96;
-      --text-dim: #5c5c66;
-      --progress: #00ba7c;
-      --progress-track: #1e2a24;
-      --tag-super: #f97316;
-      --tag-super-bg: rgba(249, 115, 22, 0.15);
-      --tag-fan: #3b82f6;
-      --tag-fan-bg: rgba(59, 130, 246, 0.15);
-      --tag-passer: #6b7280;
-      --tag-passer-bg: rgba(107, 114, 128, 0.15);
-      --ok: #00ba7c;
-      --ok-bg: rgba(0, 186, 124, 0.12);
-      --bad: #f4212e;
-      --bad-bg: rgba(244, 33, 46, 0.12);
-      --accent: #1d9bf0;
-      --warn: #fbbf24;
-      --radius: 12px;
+      --coral: #F18D8D;
+      --sky: #4DBBEB;
+      --orange: #F7941D;
+      --magenta: #E91E63;
+      --yellow: #FFD500;
+      --bg: #FFF8F0;
+      --bg-elev: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-hover: #FFF1E6;
+      --border: #F0D9C8;
+      --text: #1F1520;
+      --text-muted: #6B5A62;
+      --text-dim: #9A8790;
+      --progress: var(--magenta);
+      --progress-track: #FCE4EC;
+      --tag-super: #C2410C;
+      --tag-super-bg: rgba(247, 148, 29, 0.22);
+      --tag-fan: #0369A1;
+      --tag-fan-bg: rgba(77, 187, 235, 0.22);
+      --tag-passer: #6B5A62;
+      --tag-passer-bg: rgba(107, 90, 98, 0.12);
+      --ok: #0D9488;
+      --ok-bg: rgba(13, 148, 136, 0.12);
+      --bad: #E91E63;
+      --bad-bg: rgba(233, 30, 99, 0.12);
+      --accent: var(--sky);
+      --accent-2: var(--magenta);
+      --warn: #B45309;
+      --radius: 14px;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --shadow: 0 8px 24px rgba(233, 30, 99, 0.08), 0 2px 8px rgba(31, 21, 32, 0.06);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -40,16 +47,48 @@
       min-height: 100vh;
       line-height: 1.45;
       font-size: 14px;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          var(--coral) 0px, var(--coral) 28px,
+          var(--sky) 28px, var(--sky) 56px,
+          var(--orange) 56px, var(--orange) 84px,
+          var(--magenta) 84px, var(--magenta) 112px,
+          var(--yellow) 112px, var(--yellow) 140px
+        );
+      opacity: 0.18;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.12) 40%, transparent 75%);
+      -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.12) 40%, transparent 75%);
+    }
+    .paper-strip {
+      height: 14px;
+      width: 100%;
+      background:
+        radial-gradient(circle at 10px 0, transparent 9px, var(--coral) 9.5px) 0 0 / 20px 14px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--sky) 9.5px) 20px 0 / 20px 14px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--orange) 9.5px) 40px 0 / 20px 14px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--magenta) 9.5px) 60px 0 / 20px 14px,
+        radial-gradient(circle at 10px 0, transparent 9px, var(--yellow) 9.5px) 80px 0 / 20px 14px;
+      background-color: var(--coral);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.06);
     }
     .banner {
-      background: #1c1917;
-      border-bottom: 1px solid #292524;
-      color: #a8a29e;
+      background: linear-gradient(90deg, rgba(241,141,141,0.35), rgba(77,187,235,0.3), rgba(255,213,0,0.35));
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
       font-size: 12px;
       padding: 8px 20px;
       text-align: center;
     }
-    .banner strong { color: #fbbf24; font-weight: 600; }
+    .banner strong { color: var(--magenta); font-weight: 700; }
 
     .app-header {
       display: flex;
@@ -75,7 +114,7 @@
     .brand-mark {
       width: 28px; height: 28px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #00ba7c, #1d9bf0);
+      background: linear-gradient(135deg, var(--magenta), var(--orange), var(--yellow));
       display: grid; place-items: center;
       font-size: 13px; font-weight: 700; color: #fff;
     }
@@ -101,11 +140,26 @@
     }
     .btn:hover { background: var(--bg-hover); }
     .btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--magenta), var(--orange));
+      border-color: transparent;
       color: #fff;
+      box-shadow: 0 4px 14px rgba(233, 30, 99, 0.28);
     }
-    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.primary:hover { filter: brightness(1.06); }
+    .btn.x-login {
+      background: #000;
+      border-color: #000;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      font-size: 15px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+    .btn.x-login:hover { filter: brightness(1.1); background: #111; }
+    .btn.x-login svg { width: 18px; height: 18px; fill: currentColor; }
     .btn.ghost { background: transparent; }
     .btn.danger-soft {
       background: var(--bad-bg);
@@ -155,7 +209,7 @@
 
     /* 反差钩子 */
     .hook {
-      background: linear-gradient(135deg, #141820 0%, #1a1a1e 60%, #1a1512 100%);
+      background: linear-gradient(135deg, #fff 0%, #FFF5F7 45%, #FFF8E7 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px 22px;
@@ -165,6 +219,16 @@
       justify-content: space-between;
       gap: 16px;
       flex-wrap: wrap;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .hook::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 6px;
+      background: linear-gradient(180deg, var(--coral), var(--sky), var(--orange), var(--magenta), var(--yellow));
     }
     .hook-text {
       font-size: clamp(20px, 4.5vw, 28px);
@@ -172,8 +236,8 @@
       letter-spacing: -0.03em;
       line-height: 1.25;
     }
-    .hook-text .hi { color: var(--warn); }
-    .hook-text .lo { color: #fb7185; }
+    .hook-text .hi { color: var(--orange); }
+    .hook-text .lo { color: var(--magenta); }
     .hook-sub {
       margin-top: 8px;
       font-size: 13px;
@@ -369,8 +433,8 @@
     .footnote code {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 11px;
-      color: #a3e635;
-      background: #12180f;
+      color: var(--magenta);
+      background: #FCE4EC;
       padding: 1px 5px;
       border-radius: 4px;
     }
@@ -450,7 +514,7 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%) translateY(80px);
-      background: #1f2937;
+      background: #1F1520;
       color: #fff;
       padding: 10px 18px;
       border-radius: 999px;
@@ -460,7 +524,7 @@
       opacity: 0;
       transition: transform .25s, opacity .25s;
       pointer-events: none;
-      border: 1px solid #374151;
+      border: 1px solid rgba(255,255,255,0.12);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -588,14 +652,14 @@
       font-weight: 600;
       padding: 4px 10px;
       border-radius: 999px;
-      background: rgba(251, 191, 36, 0.12);
+      background: rgba(255, 213, 0, 0.25);
       color: var(--warn);
-      border: 1px solid rgba(251, 191, 36, 0.25);
+      border: 1px solid rgba(247, 148, 29, 0.35);
     }
     .status-pill.on {
-      background: var(--ok-bg);
-      color: var(--ok);
-      border-color: rgba(0,186,124,.3);
+      background: rgba(77, 187, 235, 0.2);
+      color: #0369A1;
+      border-color: rgba(77, 187, 235, 0.45);
     }
     .account-select {
       appearance: none;
@@ -608,7 +672,7 @@
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      background-image: linear-gradient(45deg, transparent 50%, #8b8b96 50%), linear-gradient(135deg, #8b8b96 50%, transparent 50%);
+      background-image: linear-gradient(45deg, transparent 50%, #6B5A62 50%), linear-gradient(135deg, #6B5A62 50%, transparent 50%);
       background-position: calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
       background-size: 5px 5px, 5px 5px;
       background-repeat: no-repeat;
@@ -641,10 +705,146 @@
       gap: 10px;
       flex-wrap: wrap;
       padding: 10px 20px;
-      background: #14120f;
-      border-bottom: 1px solid #292524;
+      background: rgba(255,255,255,0.72);
+      border-bottom: 1px solid var(--border);
       font-size: 12px;
       color: var(--text-muted);
+    }
+    body.logged-out .creator-bar,
+    body.logged-out .app-header,
+    body.logged-out main { display: none !important; }
+    body.logged-in .login-hero { display: none !important; }
+    .login-hero {
+      display: none;
+      min-height: calc(100vh - 40px);
+      padding: 40px 20px 60px;
+      align-items: center;
+      justify-content: center;
+    }
+    body.logged-out .login-hero { display: flex; }
+    .login-card {
+      width: min(440px, 100%);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0;
+      height: 10px;
+      background: linear-gradient(90deg, var(--coral), var(--sky), var(--orange), var(--magenta), var(--yellow));
+    }
+    .login-card .scallops {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin: 8px 0 18px;
+      height: 22px;
+    }
+    .login-card .scallops span {
+      width: 36px; height: 22px;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.06);
+    }
+    .login-card h1 {
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .login-card .lead {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+    .login-card .note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+    .login-card .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .login-card .badge {
+      font-size: 11px;
+      font-weight: 650;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(77,187,235,0.18);
+      color: #0369A1;
+    }
+    .login-card .badge.warn {
+      background: rgba(255,213,0,0.28);
+      color: #92400E;
+    }
+    .auth-modal { width: min(400px, 100%); }
+    .auth-perms {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 14px 0 18px;
+    }
+    .auth-perm {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+      font-size: 13px;
+    }
+    .auth-perm .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      margin-top: 5px; flex-shrink: 0;
+      background: var(--sky);
+    }
+    .auth-perm:nth-child(2) .dot { background: var(--magenta); }
+    .auth-perm:nth-child(3) .dot { background: var(--orange); }
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px 4px 4px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .user-chip .av {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      color: #fff; font-size: 11px; font-weight: 700;
+      background: linear-gradient(135deg, var(--sky), var(--magenta));
+    }
+    .panel, .stat-card {
+      box-shadow: var(--shadow);
+    }
+    nav.tabs button.active {
+      background: linear-gradient(135deg, rgba(233,30,99,0.12), rgba(77,187,235,0.14));
+      color: var(--text);
+      box-shadow: 0 0 0 1px rgba(233,30,99,0.25);
     }
     .toggle {
       display: inline-flex;
@@ -654,63 +854,41 @@
       user-select: none;
     }
     .toggle input { accent-color: var(--accent); }
-
-    .import-modal { width: min(560px, 100%); }
-    .import-tabs { display:flex; gap:6px; margin-bottom:12px; }
-    .import-tabs button {
-      flex:1; appearance:none; border:1px solid var(--border); background:var(--bg-elev);
-      color:var(--text-muted); padding:8px; border-radius:8px; font:inherit; font-weight:600;
-      font-size:13px; cursor:pointer;
-    }
-    .import-tabs button.active { color:var(--text); border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
-    .import-pane { display:none; }
-    .import-pane.active { display:block; }
-    .import-drop {
-      border:1.5px dashed var(--border); border-radius:10px; padding:28px 16px; text-align:center;
-      color:var(--text-muted); background:var(--bg-elev); cursor:pointer;
-    }
-    .import-drop:hover, .import-drop.drag { border-color:var(--accent); color:var(--text); }
-    .import-ta {
-      width:100%; min-height:160px; background:var(--bg-elev); border:1px solid var(--border);
-      border-radius:10px; padding:12px; color:var(--text); font-family:ui-monospace,Menlo,monospace;
-      font-size:12px; resize:vertical;
-    }
-    .import-ta:focus { outline:none; border-color:var(--accent); }
-    .import-err {
-      display:none; margin-top:10px; padding:10px 12px; border-radius:8px;
-      background:var(--bad-bg); color:#fb7185; font-size:12px; line-height:1.5;
-    }
-    .import-err.show { display:block; }
-    .import-help {
-      margin-top:12px; font-size:12px; color:var(--text-muted); line-height:1.65;
-      background:var(--bg-elev); border:1px dashed var(--border); border-radius:8px; padding:12px;
-    }
-    .import-help code {
-      font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#a3e635;
-      background:#12180f; padding:1px 5px; border-radius:4px;
-    }
-    .import-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:flex-end; }
-    .empty-hero {
-      display:none; max-width:520px; margin:48px auto; text-align:center; padding:32px 20px;
-      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
-    }
-    .empty-hero.show { display:block; }
-    .empty-hero h2 { font-size:20px; margin-bottom:8px; }
-    .empty-hero p { color:var(--text-muted); font-size:13px; margin-bottom:18px; line-height:1.55; }
-    .empty-hero .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-    body.empty-mode main > .view { display:none !important; }
-    body.empty-mode .empty-hero { display:block; }
-    body.empty-mode #creator-bar { display:none; }
 </style>
 </head>
-<body>
+<body class="logged-out">
+  <div class="paper-strip" aria-hidden="true"></div>
   <div class="banner">
-    <strong>全免费</strong> — 数据仅在本机浏览器 · <strong>非 X 官方</strong>
+    <strong>原型 v5</strong> — X 授权登录演示 · 全免费 · <strong>非 X 官方</strong>
+  </div>
+
+  <div class="login-hero" id="login-hero">
+    <div class="login-card">
+      <div class="scallops" aria-hidden="true">
+        <span style="background:var(--coral)"></span>
+        <span style="background:var(--sky)"></span>
+        <span style="background:var(--orange)"></span>
+        <span style="background:var(--magenta)"></span>
+        <span style="background:var(--yellow)"></span>
+      </div>
+      <h1>互动分析</h1>
+      <p class="lead">用 X 授权登录后，查看谁常回你、你常回谁。<br/>演示授权，不会真的连接 X API。</p>
+      <div class="badge-row">
+        <span class="badge">演示授权</span>
+        <span class="badge warn">非 X 官方</span>
+        <span class="badge">全免费</span>
+      </div>
+      <button type="button" class="btn x-login" id="btn-login">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.849L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        使用 X 授权登录
+      </button>
+      <p class="note">授权后将拉取你的互动示意数据（本机示例）。不上传、不写帖、不读私信。</p>
+    </div>
   </div>
 
   <div class="creator-bar" id="creator-bar">
-    <span>多账号（演示）</span>
-    <select class="account-select" id="account-select" aria-label="切换账号"></select>
+    <span>切换已授权账号（演示）</span>
+    <select class="account-select" id="account-select" aria-label="切换已授权账号"></select>
     <label class="toggle"><input type="checkbox" id="weekly-toggle" /> 周报分享卡自动模板（演示）</label>
   </div>
 
@@ -730,9 +908,12 @@
       <button type="button" data-view="visit">串门回访</button>
     </nav>
     <div class="header-actions">
-      <span class="status-pill on" id="status-pill">示例数据</span>
-      <button type="button" class="btn ghost" id="btn-sample" title="加载内置示例">加载示例</button>
-      <button type="button" class="btn" id="btn-import" title="导入 CSV">导入数据</button>
+      <div class="user-chip" id="user-chip" title="已授权账号">
+        <span class="av" id="user-av">Y</span>
+        <span id="user-handle">@you</span>
+      </div>
+      <span class="status-pill on" id="status-pill">已从 X 拉取 · 演示</span>
+      <button type="button" class="btn ghost" id="btn-logout" title="退出登录">退出</button>
       <button type="button" class="btn" id="btn-export" title="导出 CSV">导出 CSV</button>
       <button type="button" class="btn primary" id="btn-share">分享</button>
     </div>
@@ -909,52 +1090,27 @@
     </div>
   </div>
 
-
-  <div class="empty-hero" id="empty-hero">
-    <h2>开始分析互动</h2>
-    <p>上传或粘贴 CSV，在本地算出谁常回你、你常回谁。数据不会上传到服务器。</p>
-    <div class="row">
-      <button type="button" class="btn primary" id="btn-empty-import">导入数据</button>
-      <button type="button" class="btn" id="btn-empty-sample">加载示例</button>
-      <button type="button" class="btn ghost" id="btn-empty-template">下载 CSV 模板</button>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="import-modal" role="dialog" aria-modal="true" aria-label="导入数据">
-    <div class="modal import-modal">
+  <div class="modal-backdrop" id="auth-modal" role="dialog" aria-modal="true" aria-label="X 授权登录">
+    <div class="modal auth-modal">
       <div class="modal-head">
         <div>
-          <h3>导入互动数据</h3>
-          <div class="handle" style="margin-top:4px">CSV 仅在浏览器解析 · 不上传</div>
+          <h3>授权「互动分析」</h3>
+          <div class="handle" style="margin-top:4px">演示授权 · 不真连 X API · 非 X 官方</div>
         </div>
-        <button type="button" class="close" id="import-close" aria-label="关闭">×</button>
+        <button type="button" class="close" id="auth-close" aria-label="关闭">×</button>
       </div>
-      <div class="import-tabs" id="import-tabs">
-        <button type="button" class="active" data-pane="file">上传文件</button>
-        <button type="button" data-pane="paste">粘贴文本</button>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.55">将请求以下<strong>只读</strong>权限示意（不会发帖、不读私信）：</p>
+      <div class="auth-perms">
+        <div class="auth-perm"><span class="dot"></span><div>读取你的公开资料与 @handle</div></div>
+        <div class="auth-perm"><span class="dot"></span><div>读取与你相关的回复 / 互动记录</div></div>
+        <div class="auth-perm"><span class="dot"></span><div>用于生成本地互动分析与分享卡</div></div>
       </div>
-      <div class="import-pane active" id="pane-file">
-        <div class="import-drop" id="import-drop">
-          <div style="font-weight:650;color:var(--text);margin-bottom:6px">点击选择或拖入 CSV</div>
-          <div style="font-size:12px">支持 .csv · UTF-8</div>
-          <input type="file" id="import-file" accept=".csv,text/csv,text/plain" hidden />
-        </div>
-        <div id="import-file-name" style="margin-top:8px;font-size:12px;color:var(--text-dim)"></div>
-      </div>
-      <div class="import-pane" id="pane-paste">
-        <textarea class="import-ta" id="import-paste" placeholder="粘贴完整 CSV（含表头）…" spellcheck="false"></textarea>
-      </div>
-      <div class="import-err" id="import-err"></div>
-      <div class="import-help">
-        <div style="font-weight:650;color:var(--text);margin-bottom:6px">字段说明（中英列名都认）</div>
-        必填：<code>handle</code>（用户名 / screen_name）· <code>they_replies</code>（对方回复数）· <code>i_replies</code>（我回复数）<br/>
-        可选：<code>name</code>（显示名）· <code>preview_they</code> / <code>preview_i</code> · <code>last_their_at</code> · <code>wait_hours</code><br/>
-        handle 可带或不带 @。串门回访用双向回复次数代理，无需 visit 列。
-      </div>
-      <div class="import-actions">
-        <button type="button" class="btn ghost" id="btn-dl-template">下载模板</button>
-        <button type="button" class="btn" id="btn-import-cancel">取消</button>
-        <button type="button" class="btn primary" id="btn-import-go">解析并加载</button>
+      <div class="auth-actions">
+        <button type="button" class="btn ghost" id="auth-cancel">取消</button>
+        <button type="button" class="btn x-login" id="auth-confirm" style="padding:10px 16px;font-size:14px">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.849L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          授权并继续
+        </button>
       </div>
     </div>
   </div>
@@ -963,23 +1119,19 @@
 
   <script>
 
-    const LS_ACCOUNT = "xia_v4_account";
-    const LS_WEEKLY = "xia_v4_weekly_on";
-    const LS_MODE = "xia_prod_mode";
-    const LS_IMPORT = "xia_prod_import_raw";
+    const LS_ACCOUNT = "xia_v5_account";
+    const LS_WEEKLY = "xia_v5_weekly_on";
+    const SS_AUTH = "xia_v5_authed";
     const SHARE_URL = "https://snakeshu.github.io/x-interaction-analysis-proto/";
-    const COLORS = ["#e11d48","#8b5cf6","#06b6d4","#f59e0b","#10b981","#3b82f6","#64748b","#ec4899","#a855f7","#84cc16","#f43f5e","#14b8a6","#0ea5e9","#22c55e","#a78bfa","#f472b6"];
 
     let currentTpl = "overview";
     let activeAccountId = "me";
-    let dataMode = "sample"; // sample | imported | empty
-    let importedRaw = [];
-    let pendingCsvText = "";
+    let isAuthed = false;
 
     const ACCOUNTS = {
       me: {
         id: "me",
-        label: "@you · 主账号",
+        label: "@you · 主账号（已授权）", handle: "you", displayName: "You",
         raw: [
           { id:"u1", name:"林晓舟", handle:"linxz", color:"#e11d48", theyReplies:9, iReplies:5,
             theirPreview:"这个观点很有意思，展开聊聊？", myPreview:"感谢反馈，下一篇会写更细。",
@@ -1021,7 +1173,7 @@
       },
       alt: {
         id: "alt",
-        label: "@brand · 品牌号（演示）",
+        label: "@brand · 品牌号（已授权演示）", handle: "brand", displayName: "Brand",
         raw: [
           { id:"a1", name:"产品君", handle:"pm_jun", color:"#0ea5e9", theyReplies:7, iReplies:4,
             theirPreview:"路线图可以公开吗？", myPreview:"Q4 会发一版。",
@@ -1068,8 +1220,11 @@
     let byScore = [], noReplyList = [], longestWait = null;
     let hookLine = "", hookInsight = "";
 
-    function applyPeople(rawList) {
-      const scored = rawList.map(u => Object.assign({}, u, computeScore(u)));
+    function loadAccount(id) {
+      activeAccountId = id;
+      localStorage.setItem(LS_ACCOUNT, id);
+      const acc = ACCOUNTS[id] || ACCOUNTS.me;
+      const scored = acc.raw.map(u => Object.assign({}, u, computeScore(u)));
       totalScore = scored.reduce((a, u) => a + u.score, 0);
       avgScore = scored.length ? totalScore / scored.length : 0;
       function tagFor(score) {
@@ -1090,190 +1245,6 @@
       longestWait = noReplyList[0];
       hookLine = "你回了 " + countIReplied + " 人，只有 " + countRepliedMe + " 人回你";
       hookInsight = "其中 " + countNoReply + " 人一直没回 · 最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—");
-    }
-
-    function loadAccount(id) {
-      activeAccountId = id;
-      localStorage.setItem(LS_ACCOUNT, id);
-      dataMode = "sample";
-      localStorage.setItem(LS_MODE, "sample");
-      const acc = ACCOUNTS[id] || ACCOUNTS.me;
-      applyPeople(acc.raw);
-    }
-
-    function loadImported(rawList) {
-      dataMode = "imported";
-      importedRaw = rawList;
-      localStorage.setItem(LS_MODE, "imported");
-      applyPeople(rawList);
-    }
-
-    function setEmptyMode() {
-      dataMode = "empty";
-      localStorage.setItem(LS_MODE, "empty");
-      users = []; totalScore = 0; avgScore = 0; ratioSum = 0;
-      countRepliedMe = 0; countIReplied = 0; countNoReply = 0;
-      byScore = []; noReplyList = []; longestWait = null;
-      hookLine = ""; hookInsight = "";
-    }
-
-    const COL_MAP = {
-      handle: ["handle","用户名","screen_name","screenname","账号"],
-      name: ["name","显示名","display_name","nickname","昵称"],
-      they_replies: ["they_replies","对方回复数","theyreplies","they","对方互动"],
-      i_replies: ["i_replies","我回复数","ireplies","me","我方互动","我互动"],
-      preview_they: ["preview_they","对方预览","their_preview","theirpreview","对方内容"],
-      preview_i: ["preview_i","我方预览","my_preview","mypreview","我方内容","我预览"],
-      last_their_at: ["last_their_at","对方最近互动","last_at","lasttheirat","最近时间"],
-      wait_hours: ["wait_hours","等待小时数","waithours","wait","等待"]
-    };
-
-    function normHeader(h) {
-      return String(h || "").replace(/^\uFEFF/, "").trim().toLowerCase().replace(/\s+/g, "_");
-    }
-
-    function parseCsv(text) {
-      if (text == null) throw new Error("空文件");
-      let s = String(text).replace(/^\uFEFF/, "");
-      if (!s.trim()) throw new Error("空文件，请粘贴或上传含表头的 CSV");
-      const rows = [];
-      let row = [], cur = "", i = 0, inQ = false;
-      while (i < s.length) {
-        const ch = s[i];
-        if (inQ) {
-          if (ch === '"') {
-            if (s[i+1] === '"') { cur += '"'; i += 2; continue; }
-            inQ = false; i++; continue;
-          }
-          cur += ch; i++; continue;
-        }
-        if (ch === '"') { inQ = true; i++; continue; }
-        if (ch === ",") { row.push(cur); cur = ""; i++; continue; }
-        if (ch === "\r") { i++; continue; }
-        if (ch === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; i++; continue; }
-        cur += ch; i++;
-      }
-      row.push(cur);
-      if (row.length > 1 || (row.length === 1 && row[0].trim() !== "")) rows.push(row);
-      if (!rows.length) throw new Error("空文件，请粘贴或上传含表头的 CSV");
-      const headers = rows[0].map(normHeader);
-      if (!headers.some(Boolean)) throw new Error("缺少表头行");
-      const idx = {};
-      Object.keys(COL_MAP).forEach(key => {
-        const aliases = COL_MAP[key].map(normHeader);
-        const found = headers.findIndex(h => aliases.includes(h));
-        if (found >= 0) idx[key] = found;
-      });
-      if (idx.handle === undefined) throw new Error("缺少必填列：handle（或 用户名 / screen_name）");
-      if (idx.they_replies === undefined) throw new Error("缺少必填列：they_replies（或 对方回复数）");
-      if (idx.i_replies === undefined) throw new Error("缺少必填列：i_replies（或 我回复数）");
-      const dataRows = rows.slice(1).filter(r => r.some(c => String(c).trim() !== ""));
-      if (!dataRows.length) throw new Error("没有数据行");
-      const now = Date.now();
-      const people = [];
-      const seen = new Set();
-      dataRows.forEach((r, n) => {
-        let handle = String(r[idx.handle] || "").trim().replace(/^@+/, "");
-        if (!handle) return;
-        const key = handle.toLowerCase();
-        if (seen.has(key)) return;
-        seen.add(key);
-        const name = idx.name !== undefined ? String(r[idx.name] || "").trim() : "";
-        const they = Math.max(0, parseInt(String(r[idx.they_replies] || "0").trim(), 10) || 0);
-        const me = Math.max(0, parseInt(String(r[idx.i_replies] || "0").trim(), 10) || 0);
-        const theirPreview = idx.preview_they !== undefined ? String(r[idx.preview_they] || "").trim() : "";
-        const myPreview = idx.preview_i !== undefined ? String(r[idx.preview_i] || "").trim() : "";
-        const lastTheirAt = idx.last_their_at !== undefined ? String(r[idx.last_their_at] || "").trim() : "";
-        let waitHours = 0;
-        if (idx.wait_hours !== undefined && String(r[idx.wait_hours] || "").trim() !== "") {
-          waitHours = Math.max(0, parseInt(String(r[idx.wait_hours]).trim(), 10) || 0);
-        } else if (they === 0 && me > 0 && lastTheirAt) {
-          const t = Date.parse(lastTheirAt.replace(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/, "$1T$2:00"));
-          if (!isNaN(t)) waitHours = Math.max(0, Math.round((now - t) / 3600000));
-        } else if (they === 0 && me > 0) {
-          waitHours = 0;
-        }
-        const color = COLORS[Math.abs(hashStr(key)) % COLORS.length];
-        people.push({
-          id: "imp_" + n + "_" + key.slice(0, 24),
-          name: name || handle,
-          handle: handle,
-          color: color,
-          theyReplies: they,
-          iReplies: me,
-          theirPreview: theirPreview,
-          myPreview: myPreview,
-          lastTheirAt: lastTheirAt,
-          waitHours: waitHours
-        });
-      });
-      if (!people.length) throw new Error("没有有效的用户行（handle 不能为空）");
-      return people;
-    }
-
-    function hashStr(s) {
-      let h = 0;
-      for (let i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
-      return h;
-    }
-
-    const TEMPLATE_CSV = "\uFEFF" + [
-      "handle,name,they_replies,i_replies,preview_they,preview_i,last_their_at,wait_hours",
-      "linxz,林晓舟,9,5,这个观点很有意思,感谢反馈,2026-10-23 21:14,0",
-      "ake_dev,阿可,4,3,同款踩坑,部署脚本能开源吗,2026-10-22 11:02,0",
-      "xiaoman,小满,0,4,,新封面好好看,,120",
-      "qinghe,青禾,3,1,早啊今天也冲,早安,2026-10-24 07:55,0",
-      "nanfeng,南风,0,3,,这篇写太好了,,72"
-    ].join("\n");
-
-    function downloadTemplate() {
-      const blob = new Blob([TEMPLATE_CSV], { type: "text/csv;charset=utf-8" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "interact-template.csv";
-      a.click();
-      toast("已下载 CSV 模板");
-    }
-
-    function showImportErr(msg) {
-      const el = document.getElementById("import-err");
-      el.textContent = msg || "";
-      el.classList.toggle("show", !!msg);
-    }
-
-    function openImport() {
-      showImportErr("");
-      pendingCsvText = "";
-      document.getElementById("import-file-name").textContent = "";
-      document.getElementById("import-paste").value = "";
-      document.getElementById("import-file").value = "";
-      document.getElementById("import-modal").classList.add("open");
-    }
-    function closeImport() { document.getElementById("import-modal").classList.remove("open"); }
-
-    function updateStatusUI() {
-      const pill = document.getElementById("status-pill");
-      const bar = document.getElementById("creator-bar");
-      const empty = document.getElementById("empty-hero");
-      document.body.classList.toggle("empty-mode", dataMode === "empty");
-      if (dataMode === "imported") {
-        pill.textContent = "已导入 · " + users.length + " 人";
-        pill.classList.add("on");
-        bar.style.display = "none";
-        empty.classList.remove("show");
-      } else if (dataMode === "sample") {
-        pill.textContent = "示例数据";
-        pill.classList.add("on");
-        bar.style.display = "";
-        empty.classList.remove("show");
-      } else {
-        pill.textContent = "未加载数据";
-        pill.classList.remove("on");
-        bar.style.display = "none";
-        empty.classList.add("show");
-      }
-      document.getElementById("btn-export").disabled = users.length === 0;
-      document.getElementById("btn-share").disabled = users.length === 0;
     }
 
     function tagHtml(tag) {
@@ -1302,7 +1273,6 @@
         '<option value="' + a.id + '"' + (a.id === activeAccountId ? " selected" : "") + '>' + a.label + '</option>'
       ).join("");
       document.getElementById("weekly-toggle").checked = localStorage.getItem(LS_WEEKLY) === "1";
-      updateStatusUI();
     }
 
     function renderOverview() {
@@ -1326,7 +1296,7 @@
       document.getElementById("footnote").innerHTML =
         "计分：对方回我×2 + 我回对方×1 + 双向额外+1。标签：铁粉 / 粉丝 / 路人。" +
         "当前均分 <code>" + avgScore.toFixed(2) + "</code>。比例之和 <code>" + ratioSum.toFixed(2) + "%</code>。" +
-        "数据仅在本机 · 全免费 · 非 X 官方。";
+        "已通过 X 授权登录（演示）· 数据为示意拉取 · 全免费。";
     }
 
     function renderRepliedMe() {
@@ -1400,97 +1370,106 @@
 
     function drawCardChrome(title) {
       const g = ctx.createLinearGradient(0, 0, 0, 1350);
-      g.addColorStop(0, "#0c0c0e");
-      g.addColorStop(0.55, "#12141a");
-      g.addColorStop(1, "#0a0a0b");
+      g.addColorStop(0, "#FFF8F0");
+      g.addColorStop(0.5, "#FFFFFF");
+      g.addColorStop(1, "#FFF1E8");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 1080, 1350);
-      const ag = ctx.createLinearGradient(60, 0, 1020, 0);
-      ag.addColorStop(0, "#00ba7c");
-      ag.addColorStop(1, "#1d9bf0");
-      ctx.fillStyle = ag;
-      ctx.fillRect(60, 48, 960, 6);
-      ctx.fillStyle = "#f0f0f2";
+      const strips = ["#F18D8D","#4DBBEB","#F7941D","#E91E63","#FFD500"];
+      strips.forEach((c, i) => {
+        ctx.fillStyle = c;
+        ctx.fillRect(0, i * 18, 1080, 18);
+      });
+      // scallop edge under strips
+      for (let x = 0; x < 1080; x += 36) {
+        ctx.beginPath();
+        ctx.arc(x + 18, 90, 18, Math.PI, 0);
+        ctx.fillStyle = strips[Math.floor(x / 36) % 5];
+        ctx.fill();
+      }
+      ctx.fillStyle = "#1F1520";
       ctx.font = "700 36px sans-serif";
-      ctx.fillText("互动分析", 60, 120);
-      ctx.fillStyle = "#8b8b96";
+      ctx.fillText("互动分析", 60, 160);
+      ctx.fillStyle = "#6B5A62";
       ctx.font = "500 24px sans-serif";
-      ctx.fillText(title, 60, 160);
-      ctx.fillStyle = "rgba(251,191,36,0.15)";
-      roundRect(ctx, 740, 90, 280, 44, 22);
+      ctx.fillText(title, 60, 200);
+      ctx.fillStyle = "rgba(233,30,99,0.12)";
+      roundRect(ctx, 700, 130, 320, 44, 22);
       ctx.fill();
-      ctx.fillStyle = "#fbbf24";
+      ctx.fillStyle = "#E91E63";
       ctx.font = "600 20px sans-serif";
-      ctx.fillText((dataMode === "imported" ? "已导入" : "示例") + " · 非官方", 760, 120);
-      ctx.fillStyle = "#2a2a30";
+      ctx.fillText("已授权 · 非 X 官方", 720, 160);
+      ctx.fillStyle = "#F0D9C8";
       ctx.fillRect(60, 1240, 960, 1);
-      ctx.fillStyle = "#8b8b96";
+      ctx.fillStyle = "#6B5A62";
       ctx.font = "500 22px sans-serif";
       ctx.fillText("互动分析", 60, 1290);
-      ctx.fillStyle = "#1d9bf0";
+      ctx.fillStyle = "#4DBBEB";
       ctx.font = "600 22px sans-serif";
-      ctx.fillText("GitHub Pages", 220, 1290);
-      ctx.fillStyle = "#5c5c66";
+      ctx.fillText("interact.app", 220, 1290);
+      ctx.fillStyle = "#9A8790";
       ctx.font = "500 20px sans-serif";
-      ctx.fillText("非 X 官方", 900, 1290);
+      ctx.fillText("非官方 · 演示", 850, 1290);
     }
 
     function drawOverviewCard() {
       drawCardChrome("我的互动反差");
-      ctx.fillStyle = "#f0f0f2";
+      ctx.fillStyle = "#1F1520";
       ctx.font = "750 52px sans-serif";
-      ctx.fillText("你回了 " + countIReplied + " 人", 60, 280);
-      ctx.fillStyle = "#fb7185";
-      ctx.fillText("只有 " + countRepliedMe + " 人回你", 60, 350);
-      ctx.fillStyle = "#8b8b96";
+      ctx.fillText("你回了 " + countIReplied + " 人", 60, 300);
+      ctx.fillStyle = "#E91E63";
+      ctx.fillText("只有 " + countRepliedMe + " 人回你", 60, 370);
+      ctx.fillStyle = "#6B5A62";
       ctx.font = "500 26px sans-serif";
-      ctx.fillText(hookInsight, 60, 410);
+      ctx.fillText(hookInsight, 60, 430);
       const cards = [
-        { label: "回复我的", val: String(countRepliedMe), color: "#00ba7c" },
-        { label: "我回复的", val: String(countIReplied), color: "#1d9bf0" },
-        { label: "没回我的", val: String(countNoReply), color: "#fb7185" }
+        { label: "回复我的", val: String(countRepliedMe), color: "#4DBBEB" },
+        { label: "我回复的", val: String(countIReplied), color: "#F7941D" },
+        { label: "没回我的", val: String(countNoReply), color: "#E91E63" }
       ];
       cards.forEach((c, i) => {
         const x = 60 + i * 320;
-        ctx.fillStyle = "#1a1a1e";
-        roundRect(ctx, x, 460, 300, 160, 20); ctx.fill();
-        ctx.strokeStyle = "#2a2a30"; ctx.lineWidth = 2;
-        roundRect(ctx, x, 460, 300, 160, 20); ctx.stroke();
-        ctx.fillStyle = "#8b8b96"; ctx.font = "600 22px sans-serif";
-        ctx.fillText(c.label, x + 24, 510);
+        ctx.fillStyle = "#FFFFFF";
+        roundRect(ctx, x, 480, 300, 160, 20); ctx.fill();
+        ctx.strokeStyle = "#F0D9C8"; ctx.lineWidth = 2;
+        roundRect(ctx, x, 480, 300, 160, 20); ctx.stroke();
+        ctx.fillStyle = "#6B5A62"; ctx.font = "600 22px sans-serif";
+        ctx.fillText(c.label, x + 24, 530);
         ctx.fillStyle = c.color; ctx.font = "750 64px sans-serif";
-        ctx.fillText(c.val, x + 24, 580);
+        ctx.fillText(c.val, x + 24, 600);
       });
-      ctx.fillStyle = "#f0f0f2"; ctx.font = "700 30px sans-serif";
-      ctx.fillText("铁粉 Top 3", 60, 700);
+      ctx.fillStyle = "#1F1520"; ctx.font = "700 30px sans-serif";
+      ctx.fillText("铁粉 Top 3", 60, 720);
       byScore.slice(0, 3).forEach((u, i) => {
-        const y = 740 + i * 130;
-        ctx.fillStyle = "#1a1a1e";
+        const y = 760 + i * 130;
+        ctx.fillStyle = "#FFFFFF";
         roundRect(ctx, 60, y, 960, 110, 16); ctx.fill();
+        ctx.strokeStyle = "#F0D9C8"; ctx.lineWidth = 2;
+        roundRect(ctx, 60, y, 960, 110, 16); ctx.stroke();
         ctx.beginPath(); ctx.arc(120, y + 55, 32, 0, Math.PI * 2);
         ctx.fillStyle = u.color; ctx.fill();
         ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
         ctx.textAlign = "center"; ctx.fillText(initials(u.name), 120, y + 64); ctx.textAlign = "left";
-        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif";
+        ctx.fillStyle = "#1F1520"; ctx.font = "650 28px sans-serif";
         ctx.fillText(u.name, 180, y + 48);
-        ctx.fillStyle = "#8b8b96"; ctx.font = "500 22px sans-serif";
+        ctx.fillStyle = "#6B5A62"; ctx.font = "500 22px sans-serif";
         ctx.fillText("@" + u.handle + " · " + u.tag.label, 180, y + 82);
-        ctx.fillStyle = "#00ba7c"; ctx.font = "750 36px sans-serif";
+        ctx.fillStyle = "#E91E63"; ctx.font = "750 36px sans-serif";
         ctx.textAlign = "right"; ctx.fillText(String(u.score), 980, y + 64); ctx.textAlign = "left";
       });
     }
 
     function drawFansCard() {
       drawCardChrome("互动铁粉榜");
-      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 48px sans-serif";
-      ctx.fillText("谁最常和你互动？", 60, 280);
-      ctx.fillStyle = "#8b8b96"; ctx.font = "500 26px sans-serif";
-      ctx.fillText("Top 5 · 总互动分 " + totalScore, 60, 330);
+      ctx.fillStyle = "#1F1520"; ctx.font = "750 48px sans-serif";
+      ctx.fillText("谁最常和你互动？", 60, 300);
+      ctx.fillStyle = "#6B5A62"; ctx.font = "500 26px sans-serif";
+      ctx.fillText("Top 5 · 总互动分 " + totalScore, 60, 350);
       const top5 = byScore.slice(0, 5);
       const maxScore = top5[0] ? top5[0].score : 1;
       top5.forEach((u, i) => {
-        const y = 380 + i * 150;
-        ctx.fillStyle = "#1a1a1e";
+        const y = 400 + i * 150;
+        ctx.fillStyle = "#FFFFFF";
         roundRect(ctx, 60, y, 960, 130, 16); ctx.fill();
         ctx.fillStyle = i === 0 ? "#fbbf24" : "#8b8b96";
         ctx.font = "750 36px sans-serif"; ctx.fillText(String(i + 1), 90, y + 78);
@@ -1498,32 +1477,34 @@
         ctx.fillStyle = u.color; ctx.fill();
         ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
         ctx.textAlign = "center"; ctx.fillText(initials(u.name), 190, y + 74); ctx.textAlign = "left";
-        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 250, y + 48);
-        const tagColor = u.tag.key === "super" ? "#f97316" : u.tag.key === "fan" ? "#3b82f6" : "#6b7280";
+        ctx.fillStyle = "#1F1520"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 250, y + 48);
+        const tagColor = u.tag.key === "super" ? "#C2410C" : u.tag.key === "fan" ? "#0369A1" : "#6B5A62";
         ctx.fillStyle = tagColor; ctx.font = "600 20px sans-serif"; ctx.fillText(u.tag.label, 250, y + 78);
         const barW = Math.max(40, (u.score / maxScore) * 420);
-        ctx.fillStyle = "#1e2a24"; roundRect(ctx, 250, y + 92, 420, 14, 7); ctx.fill();
-        ctx.fillStyle = "#00ba7c"; roundRect(ctx, 250, y + 92, barW, 14, 7); ctx.fill();
-        ctx.fillStyle = "#00ba7c"; ctx.font = "750 34px sans-serif";
+        ctx.fillStyle = "#FCE4EC"; roundRect(ctx, 250, y + 92, 420, 14, 7); ctx.fill();
+        ctx.fillStyle = "#E91E63"; roundRect(ctx, 250, y + 92, barW, 14, 7); ctx.fill();
+        ctx.fillStyle = "#E91E63"; ctx.font = "750 34px sans-serif";
         ctx.textAlign = "right"; ctx.fillText(String(u.score), 980, y + 78); ctx.textAlign = "left";
       });
     }
 
     function drawNoReplyCard() {
       drawCardChrome("串门未回访");
-      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 48px sans-serif";
-      ctx.fillText("你去串门，他们没回访", 60, 280);
-      ctx.fillStyle = "#fb7185"; ctx.font = "700 32px sans-serif";
-      ctx.fillText(noReplyList.length + " 人未回访", 60, 340);
+      ctx.fillStyle = "#1F1520"; ctx.font = "750 48px sans-serif";
+      ctx.fillText("你去串门，他们没回访", 60, 300);
+      ctx.fillStyle = "#E91E63"; ctx.font = "700 32px sans-serif";
+      ctx.fillText(noReplyList.length + " 人未回访", 60, 360);
       noReplyList.forEach((u, i) => {
-        const y = 390 + i * 120;
-        ctx.fillStyle = "#1a1a1e"; roundRect(ctx, 60, y, 960, 100, 16); ctx.fill();
-        ctx.beginPath(); ctx.arc(100, y + 50, 10, 0, Math.PI * 2); ctx.fillStyle = "#f4212e"; ctx.fill();
+        const y = 410 + i * 120;
+        ctx.fillStyle = "#FFFFFF"; roundRect(ctx, 60, y, 960, 100, 16); ctx.fill();
+        ctx.strokeStyle = "#F0D9C8"; ctx.lineWidth = 2;
+        roundRect(ctx, 60, y, 960, 100, 16); ctx.stroke();
+        ctx.beginPath(); ctx.arc(100, y + 50, 10, 0, Math.PI * 2); ctx.fillStyle = "#E91E63"; ctx.fill();
         ctx.beginPath(); ctx.arc(170, y + 50, 30, 0, Math.PI * 2); ctx.fillStyle = u.color; ctx.fill();
         ctx.fillStyle = "#fff"; ctx.font = "700 24px sans-serif";
         ctx.textAlign = "center"; ctx.fillText(initials(u.name), 170, y + 58); ctx.textAlign = "left";
-        ctx.fillStyle = "#f0f0f2"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 230, y + 42);
-        ctx.fillStyle = "#8b8b96"; ctx.font = "500 22px sans-serif";
+        ctx.fillStyle = "#1F1520"; ctx.font = "650 28px sans-serif"; ctx.fillText(u.name, 230, y + 42);
+        ctx.fillStyle = "#6B5A62"; ctx.font = "500 22px sans-serif";
         ctx.fillText("串门 " + u.iReplies + " 次 · 已等 " + formatWait(u.waitHours), 230, y + 76);
         ctx.fillStyle = "#f4212e"; ctx.font = "700 24px sans-serif";
         ctx.textAlign = "right"; ctx.fillText("未回访", 980, y + 58); ctx.textAlign = "left";
@@ -1533,10 +1514,10 @@
     function drawWeeklyCard() {
       drawCardChrome("本周互动周报");
       const acc = ACCOUNTS[activeAccountId];
-      ctx.fillStyle = "#f0f0f2"; ctx.font = "750 46px sans-serif";
-      ctx.fillText(dataMode === "imported" ? "互动周报" : "互动周报（演示）", 60, 270);
-      ctx.fillStyle = "#8b8b96"; ctx.font = "500 26px sans-serif";
-      ctx.fillText(dataMode === "imported" ? ("已导入 · " + users.length + " 人") : (acc ? acc.label : "@you"), 60, 320);
+      ctx.fillStyle = "#1F1520"; ctx.font = "750 46px sans-serif";
+      ctx.fillText("互动周报（演示）", 60, 290);
+      ctx.fillStyle = "#6B5A62"; ctx.font = "500 26px sans-serif";
+      ctx.fillText(acc ? acc.label : "@you", 60, 340);
       const metrics = [
         { label: "本周回复我的", val: countRepliedMe },
         { label: "我主动回复", val: countIReplied },
@@ -1546,11 +1527,13 @@
       metrics.forEach((m, i) => {
         const col = i % 2, row = Math.floor(i / 2);
         const x = 60 + col * 480, y = 380 + row * 180;
-        ctx.fillStyle = "#1a1a1e"; roundRect(ctx, x, y, 450, 150, 18); ctx.fill();
-        ctx.fillStyle = "#8b8b96"; ctx.font = "600 22px sans-serif"; ctx.fillText(m.label, x + 28, y + 50);
-        ctx.fillStyle = "#fbbf24"; ctx.font = "750 56px sans-serif"; ctx.fillText(String(m.val), x + 28, y + 120);
+        ctx.fillStyle = "#FFFFFF"; roundRect(ctx, x, y, 450, 150, 18); ctx.fill();
+        ctx.strokeStyle = "#F0D9C8"; ctx.lineWidth = 2;
+        roundRect(ctx, x, y, 450, 150, 18); ctx.stroke();
+        ctx.fillStyle = "#6B5A62"; ctx.font = "600 22px sans-serif"; ctx.fillText(m.label, x + 28, y + 50);
+        ctx.fillStyle = "#F7941D"; ctx.font = "750 56px sans-serif"; ctx.fillText(String(m.val), x + 28, y + 120);
       });
-      ctx.fillStyle = "#8b8b96"; ctx.font = "500 24px sans-serif";
+      ctx.fillStyle = "#6B5A62"; ctx.font = "500 24px sans-serif";
       ctx.fillText(hookLine, 60, 800);
       ctx.fillText("自动模板 · 演示开关可开", 60, 850);
     }
@@ -1564,10 +1547,10 @@
 
     function defaultPostText() {
       const map = {
-        overview: hookLine + "\n" + hookInsight + "\n用互动分看清谁真的在回你。\n#互动分析（非官方）\n" + SHARE_URL,
-        fans: "我的互动铁粉 Top5 出炉了。\n第一名 " + (byScore[0] ? byScore[0].name : "—") + "（" + (byScore[0] ? byScore[0].score : 0) + " 分）。\n#互动分析（非官方）\n" + SHARE_URL,
-        noreply: "串门 " + countIReplied + " 次，" + countNoReply + " 人没回访。\n最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—") + "（" + (longestWait ? longestWait.name : "") + "）。\n#互动分析（非官方）\n" + SHARE_URL,
-        weekly: "【周报】" + hookLine + "\n总互动分 " + totalScore + " · 未回访 " + countNoReply + "\n#互动分析（非官方）\n" + SHARE_URL
+        overview: hookLine + "\n" + hookInsight + "\n用互动分看清谁真的在回你。\n#互动分析\n" + SHARE_URL,
+        fans: "我的互动铁粉 Top5 出炉了。\n第一名 " + (byScore[0] ? byScore[0].name : "—") + "（" + (byScore[0] ? byScore[0].score : 0) + " 分）。\n#互动分析\n" + SHARE_URL,
+        noreply: "串门 " + countIReplied + " 次，" + countNoReply + " 人没回访。\n最长已等 " + (longestWait ? formatWait(longestWait.waitHours) : "—") + "（" + (longestWait ? longestWait.name : "") + "）。\n#互动分析\n" + SHARE_URL,
+        weekly: "【周报】" + hookLine + "\n总互动分 " + totalScore + " · 未回访 " + countNoReply + "\n#互动分析 #周报\n" + SHARE_URL
       };
       return map[currentTpl] || map.overview;
     }
@@ -1661,108 +1644,81 @@
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = "interact-export.csv";
+      a.download = "interact-export-demo.csv";
       a.click();
-      toast("已导出 CSV");
+      toast("已导出演示 CSV");
     });
 
+    document.getElementById("account-select").addEventListener("change", e => {
+      loadAccount(e.target.value);
+      syncUserChip();
+      rebuild();
+      drawCurrentCard();
+      toast("已切换已授权账号（演示）");
+    });
     document.getElementById("weekly-toggle").addEventListener("change", e => {
       localStorage.setItem(LS_WEEKLY, e.target.checked ? "1" : "0");
       toast(e.target.checked ? "周报自动模板已开（演示）" : "周报自动模板已关");
     });
 
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape") { closeDetail(); closeShare(); closeImport(); }
-    });
-
-    document.getElementById("btn-import").addEventListener("click", openImport);
-    document.getElementById("btn-empty-import").addEventListener("click", openImport);
-    document.getElementById("import-close").addEventListener("click", closeImport);
-    document.getElementById("btn-import-cancel").addEventListener("click", closeImport);
-    document.getElementById("import-modal").addEventListener("click", e => { if (e.target.id === "import-modal") closeImport(); });
-    document.getElementById("btn-dl-template").addEventListener("click", downloadTemplate);
-    document.getElementById("btn-empty-template").addEventListener("click", downloadTemplate);
-
-    document.getElementById("import-tabs").addEventListener("click", e => {
-      const b = e.target.closest("button[data-pane]");
-      if (!b) return;
-      document.querySelectorAll("#import-tabs button").forEach(x => x.classList.toggle("active", x === b));
-      document.querySelectorAll(".import-pane").forEach(p => p.classList.toggle("active", p.id === "pane-" + b.dataset.pane));
-    });
-
-    const drop = document.getElementById("import-drop");
-    const fileInput = document.getElementById("import-file");
-    drop.addEventListener("click", () => fileInput.click());
-    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("drag"); });
-    drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
-    drop.addEventListener("drop", e => {
-      e.preventDefault(); drop.classList.remove("drag");
-      const f = e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) readImportFile(f);
-    });
-    fileInput.addEventListener("change", () => {
-      const f = fileInput.files && fileInput.files[0];
-      if (f) readImportFile(f);
-    });
-    function readImportFile(f) {
-      document.getElementById("import-file-name").textContent = "已选：" + f.name;
-      const reader = new FileReader();
-      reader.onload = () => { pendingCsvText = String(reader.result || ""); showImportErr(""); };
-      reader.onerror = () => showImportErr("读取文件失败");
-      reader.readAsText(f, "UTF-8");
+    function syncUserChip() {
+      const acc = ACCOUNTS[activeAccountId] || ACCOUNTS.me;
+      document.getElementById("user-handle").textContent = "@" + (acc.handle || "you");
+      document.getElementById("user-av").textContent = (acc.displayName || "Y").slice(0, 1);
+      document.getElementById("status-pill").textContent = "已从 X 拉取 · 演示";
     }
 
-    document.getElementById("btn-import-go").addEventListener("click", () => {
-      const paste = document.getElementById("import-paste").value;
-      const text = (paste && paste.trim()) ? paste : pendingCsvText;
-      try {
-        const people = parseCsv(text);
-        localStorage.setItem(LS_IMPORT, text);
-        loadImported(people);
+    function setAuthUI(authed) {
+      isAuthed = !!authed;
+      document.body.classList.toggle("logged-in", isAuthed);
+      document.body.classList.toggle("logged-out", !isAuthed);
+      if (isAuthed) {
+        syncUserChip();
         rebuild();
         drawCurrentCard();
-        closeImport();
-        toast("已导入 " + people.length + " 人");
-        showView("overview");
-      } catch (err) {
-        showImportErr(err.message || String(err));
       }
-    });
+    }
 
-    function activateSample(id) {
-      loadAccount(id || activeAccountId || "me");
-      localStorage.removeItem(LS_IMPORT);
-      rebuild();
-      drawCurrentCard();
-      toast("已加载示例数据");
+    function openAuth() { document.getElementById("auth-modal").classList.add("open"); }
+    function closeAuth() { document.getElementById("auth-modal").classList.remove("open"); }
+
+    function completeLogin() {
+      sessionStorage.setItem(SS_AUTH, "1");
+      const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
+      loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+      closeAuth();
+      setAuthUI(true);
+      toast("授权成功 · 已加载互动数据（演示）");
       showView("overview");
     }
-    document.getElementById("btn-sample").addEventListener("click", () => activateSample());
-    document.getElementById("btn-empty-sample").addEventListener("click", () => activateSample());
 
-    document.getElementById("account-select").addEventListener("change", e => {
-      if (dataMode !== "sample") return;
-      loadAccount(e.target.value);
-      rebuild();
-      toast("已切换账号（演示）");
+    function logout() {
+      sessionStorage.removeItem(SS_AUTH);
+      closeShare();
+      closeDetail();
+      setAuthUI(false);
+      toast("已退出");
+    }
+
+    document.getElementById("btn-login").addEventListener("click", openAuth);
+    document.getElementById("auth-close").addEventListener("click", closeAuth);
+    document.getElementById("auth-cancel").addEventListener("click", closeAuth);
+    document.getElementById("auth-modal").addEventListener("click", e => { if (e.target.id === "auth-modal") closeAuth(); });
+    document.getElementById("auth-confirm").addEventListener("click", completeLogin);
+    document.getElementById("btn-logout").addEventListener("click", logout);
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeDetail(); closeShare(); closeAuth(); }
     });
 
     // boot
-    const savedMode = localStorage.getItem(LS_MODE) || "sample";
-    const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
-    if (savedMode === "imported" && localStorage.getItem(LS_IMPORT)) {
-      try {
-        loadImported(parseCsv(localStorage.getItem(LS_IMPORT)));
-      } catch (e) {
-        loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
-      }
-    } else if (savedMode === "empty") {
-      setEmptyMode();
-    } else {
+    if (sessionStorage.getItem(SS_AUTH) === "1") {
+      const savedAcc = localStorage.getItem(LS_ACCOUNT) || "me";
       loadAccount(ACCOUNTS[savedAcc] ? savedAcc : "me");
+      setAuthUI(true);
+    } else {
+      setAuthUI(false);
     }
-    rebuild();
-    if (users.length) drawCurrentCard();
 
   </script>
 </body>
